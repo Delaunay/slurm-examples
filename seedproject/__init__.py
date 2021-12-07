@@ -1,12 +1,10 @@
-__descr__ = 'seeddescription'
-__version__ = 'seedversion'
-__license__ = 'seedlicense'
-__author__ = u'seedauthor'
-__author_email__ = 'seed@email'
-__copyright__ = u'seedcopyright seedauthor'
-__url__ = 'seedurl'
-
-
+__descr__ = "seeddescription"
+__version__ = "seedversion"
+__license__ = "seedlicense"
+__author__ = u"seedauthor"
+__author_email__ = "seed@email"
+__copyright__ = u"seedcopyright seedauthor"
+__url__ = "seedurl"
 
 
 def my_function(a: int, b: int) -> int:

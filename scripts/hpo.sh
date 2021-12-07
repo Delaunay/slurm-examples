@@ -16,6 +16,7 @@ export ORION_CONFIG=$SLURM_TMPDIR/orion-config.yml
 #    - user hyperband
 #    - launch 4 workers for each tasks (one for each CPU)
 #    - worker dies if idle for more than a minute
+#    - Each worker are sharing a single GPU to maximize usage
 #
 cat > $ORION_CONFIG <<- EOM
     experiment:
@@ -43,5 +44,4 @@ cat > $SEARCH_SPACE <<- EOM
     }
 EOM
 
-
-orion --config $ORION_CONFIG hunt --config $SEARCH_SPACE python ./train.py --cuda
+orion --config $ORION_CONFIG hunt --config $SEARCH_SPACE python ./train.py

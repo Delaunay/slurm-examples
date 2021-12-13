@@ -19,24 +19,19 @@ update-doc: build-doc serve-doc
 #
 #
 
-single-gpu:
-	jobname = output.txt
+jobname = output.txt
 
+single-gpu:
 	touch $(jobname)
-	sbatch -o $(jobname) --nodes 1 --time=10:00 --gres=gpu:1 --cpus-per-gpu=4 --mem=16G seedproject/train_normal.py
+	sbatch -o $(jobname) --time=10:00 --gres=gpu:1 --cpus-per-gpu=4 --mem=16G scripts/single-gpu.sh seedproject/train_normal.py
 	tail -f $(jobname)
 
 multi-gpu:
-	jobname = output.txt
-
 	touch $(jobname)
-	sbatch -o $(jobname) --nodes 1 --time=10:00 --gres=gpu:4 --cpus-per-gpu=4 --mem=16G scripts/multi-gpu.sh seedproject/train_normal.py
+	sbatch -o $(jobname) --time=10:00 --gres=gpu:4 --cpus-per-gpu=4 --mem=16G scripts/multi-gpu.sh seedproject/train_normal.py
 	tail -f $(jobname)
 
-
 multi-node:
-	jobname = output.txt
-
 	touch $(jobname)
 	sbatch -o $(jobname) --nodes 3 --time=10:00 --gres=gpu:4 --cpus-per-gpu=4 --mem=16G scripts/multi-nodes.sh seedproject/train_normal.py
 	tail -f $(jobname)

@@ -277,9 +277,8 @@ class Checkpoint:
 
 def dataparallel(model, rank=None, device=None):
     """Wrap the model to make it parallel if rank is not none"""
-    if rank is not None:
+    if rank >= 0:
         log.info("enabling multi-gpu")
-
         return DistributedDataParallel(model, device_ids=[device_id()])
 
     return model

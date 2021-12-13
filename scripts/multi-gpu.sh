@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Usage:
-#   sbatch --nodes 1 --gres=gpu:4 --cpus-per-gpu=4 --mem=16G multi-gpu.sh training_script.py
+#   sbatch --nodes 1 --gres=gpu:4 --cpus-per-gpu=4 --mem=16G scripts/multi-gpu.sh seedproject/train_normal.py
 #
 
 # we need all nodes to be ready at the same time
@@ -21,12 +21,21 @@ WORLD_SIZE=$SLURM_JOB_NUM_NODES
 module load miniconda/3
 conda activate py39
 
-# export OMP_NUM_THREADS=
 
-srun -l torchrun \
-    --nproc_per_node=$SLURM_GPUS_PER_NODE\
+GPU_COUNT=$(python -c "print(len('$CUDA_VISIBLE_DEVICES'.split(',')))")
+
+# GPU_COUNT=$SLURM_GPUS_PER_NODE
+# GPU_COUNT=$(python -c "import torch; print(torch.cuda.device_count())")
+
+export OMP_NUM_THREADS=$SLURM_JOB_CPUS_PER_NODE
+
+cmd="srun -l torchrun \
+    --nproc_per_node=$GPU_COUNT\
     --nnodes=$WORLD_SIZE\
     --rdzv_id=$SLURM_JOB_ID\
     --rdzv_backend=c10d\
     --rdzv_endpoint=$RDV_ADDR\
-    "$@"
+    $@"
+
+echo $cmd
+$cmd

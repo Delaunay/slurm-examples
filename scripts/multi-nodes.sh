@@ -28,4 +28,3 @@ srun -l torchrun \
     --rdzv_backend=c10d\
     --rdzv_endpoint=$RDV_ADDR\
     "$@"
-

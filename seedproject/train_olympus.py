@@ -3,10 +3,11 @@ from olympus.models import Model
 from olympus.optimizers import Optimizer
 from olympus.utils import fetch_device
 
+from seedproject.models.lenet import LeNet
+
 # Classification is also implemented by Olympus
 # it is given here as an example
 from seedproject.tasks.classification import Classification
-from seedproject.models.lenet import LeNet
 
 register_dataset("MyModel", LeNet)
 

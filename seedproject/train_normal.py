@@ -1,31 +1,28 @@
-from dataclasses import dataclass, field
-from collections import defaultdict
-import os
-import time
 import logging
-import tempfile
+import os
 import sys
+import tempfile
+import time
+from collections import defaultdict
 from copy import deepcopy
+from dataclasses import dataclass, field
 
 import torch
-from torch.nn import CrossEntropyLoss
-from torch.nn.parallel import DistributedDataParallel
 import torch.distributed as dist
 import torch.optim as optim
+from torch.nn import CrossEntropyLoss
+from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader, RandomSampler
-
-
-from torchvision.datasets import CIFAR10
 from torchvision import transforms
+from torchvision.datasets import CIFAR10
 from torchvision.transforms.functional import to_pil_image
 
 from seedproject.models.lenet import LeNet
 
-
 log = logging.getLogger()
 
 
-class DistributedProcessGround:
+class DistributedProcessGroup:
     INSTANCE = None
 
     def __init__(self, backend="gloo"):
@@ -36,8 +33,8 @@ class DistributedProcessGround:
             dist.init_process_group(backend)
             log.info("Process group initialized")
 
-        assert DistributedProcessGround.INSTANCE is None
-        DistributedProcessGround.INSTANCE = self
+        assert DistributedProcessGroup.INSTANCE is None
+        DistributedProcessGroup.INSTANCE = self
 
     def __enter__(self):
         return self
@@ -54,12 +51,31 @@ class DistributedProcessGround:
             log.info("Process group shutdown")
             dist.destroy_process_group()
 
+    def device_id(self):
+        if self.rank < 0:
+            return -1
+
+        return self.rank % torch.cuda.device_count()
+
+    def device(self):
+        if self.rank < 0:
+            return torch.device("cuda")
+
+        return torch.device(f"cuda:{self.device_id()}")
+
 
 def rank():
-    group = DistributedProcessGround.INSTANCE
+    group = DistributedProcessGroup.INSTANCE
     if group is None:
         return -1
     return group.rank
+
+
+def device_id():
+    group = DistributedProcessGroup.INSTANCE
+    if group is None:
+        return -1
+    return group.device_id()
 
 
 @dataclass
@@ -208,8 +224,7 @@ class Checkpoint:
             # this is made to make it work with a single GPU
             # with 2 processes on a single GPU
             # for testing purposes
-            device = rank() % torch.cuda.device_count()
-            map_location = {"cuda:%d" % 0: "cuda:%d" % device}
+            map_location = {"cuda:%d" % 0: "cuda:%d" % device_id()}
 
         log.info("Loading checkpoint")
         state_dict = torch.load(
@@ -264,13 +279,22 @@ def dataparallel(model, rank=None, device=None):
     """Wrap the model to make it parallel if rank is not none"""
     if rank is not None:
         log.info("enabling multi-gpu")
-        return DistributedDataParallel(model, device_ids=[rank])
 
-    return model.to(device)
+        return DistributedDataParallel(model, device_ids=[device_id()])
+
+    return model
 
 
 class Classification:
-    def __init__(self, lr=0.001, weight_decay=0.001, momentum=0.9, device=None):
+    def __init__(
+        self,
+        lr=0.001,
+        weight_decay=0.001,
+        momentum=0.9,
+        device=None,
+        n_worker=4,
+        batch_size=256,
+    ):
         self.device = device
         self.test_transform = transforms.Compose(
             [
@@ -311,23 +335,23 @@ class Classification:
         self.sampler = RandomSampler(self.trainset)
         self.trainloader = DataLoader(
             self.trainset,
-            batch_size=256,
+            batch_size=batch_size,
             pin_memory=True,
-            num_workers=4,
+            num_workers=n_worker,
             sampler=self.sampler,
         )
 
         self.testloader = DataLoader(
             self.testset,
             batch_size=2048,
-            num_workers=4,
+            num_workers=n_worker,
         )
 
         self.local = LeNet(
             input_size=(3, 32, 32),
             num_classes=10,
-        )
-        self.classifier = dataparallel(self.local, None, self.device)
+        ).to(self.device)
+        self.classifier = dataparallel(self.local, rank(), self.device)
 
         self.optimizer = optim.SGD(
             self.classifier.parameters(),
@@ -341,7 +365,7 @@ class Classification:
             name="LeNetModel",
             every=10,  # Every 10 epochs
             # Object to save in our checkpoint
-            model=self.classifier,
+            model=self.local,  # Save the module BEFORE the DataParallel wrapper
             optimizer=self.optimizer,
             stats=self.stats,
         )
@@ -428,12 +452,15 @@ def fetch_device():
     if torch.cuda.is_available():
         default = "cuda"
 
+    if rank() >= 0:
+        torch.device(f"{default}:{device_id()}")
+
     return torch.device(default)
 
 
 def main():
-    from argparse import ArgumentParser
     import sys
+    from argparse import ArgumentParser
 
     parser = ArgumentParser()
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -446,7 +473,7 @@ def main():
 
     setup_logging(args.verbose)
 
-    with DistributedProcessGround() as group:
+    with DistributedProcessGroup() as group:
         task = Classification(
             lr=args.lr,
             weight_decay=args.weight_decay,
@@ -459,9 +486,25 @@ def main():
 
 
 if __name__ == "__main__":
+    #
+    #   MultiGPU
+    #
     # You can test the script with a single GPU using the command below
     #
-    #   torchrun --nproc_per_node=2 --nnodes=1 seedproject/train_normal.py
+    #   torchrun --nproc_per_node=4 --nnodes=1 seedproject/train_normal.py -vvv
+    #
+    # if you have a single GPU:
+    #   Launch 2 processes on the device:0
+    #
+    # if you have two GPU
+    #   Launch 1 process for device:0
+    #   Launch 1 process for device:1
+    #
+
+    #
+    #   Single GPU
+    #
+    #   python seedproject/train_normal.py -vv
     #
     # Launch 2 processes on the device:0
     #

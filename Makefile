@@ -23,15 +23,15 @@ jobname = output.txt
 
 single-gpu:
 	touch $(jobname)
-	sbatch -o $(jobname) --time=10:00 --gres=gpu:1 --cpus-per-gpu=4 --mem=16G scripts/single-gpu.sh seedproject/train_normal.py -vvv
+	sbatch -o $(jobname) --time=10:00 --gres=gpu:1 --cpus-per-gpu=4 --mem=16G scripts/single-gpu.sh seedproject/train_normal.py -vvv --cuda
 	tail -f $(jobname)
 
 multi-gpu:
 	touch $(jobname)
-	sbatch -o $(jobname) --time=10:00 --gres=gpu:4 --cpus-per-gpu=4 --mem=16G scripts/multi-gpu.sh seedproject/train_normal.py -vvv
+	sbatch -o $(jobname) --time=10:00 --gres=gpu:4 --cpus-per-gpu=4 --mem=16G scripts/multi-gpu.sh seedproject/train_normal.py -vvv --cuda
 	tail -f $(jobname)
 
 multi-node:
 	touch $(jobname)
-	sbatch -o $(jobname) --nodes 3 --time=10:00 --gres=gpu:4 --cpus-per-gpu=4 --mem=16G scripts/multi-nodes.sh seedproject/train_normal.py -vvv
+	sbatch -o $(jobname) --nodes 3 --time=10:00 --gres=gpu:4 --cpus-per-gpu=4 --mem=16G scripts/multi-nodes.sh seedproject/train_normal.py -vvv --cuda
 	tail -f $(jobname)

@@ -476,7 +476,17 @@ def main():
         "--weight_decay", default=0.001, type=float, help="Weight Decay"
     )
     parser.add_argument("--momentum", default=0.9, type=float, help="Momentum")
+    parser.add_argument(
+        "--cuda",
+        action="store_true",
+        type=bool,
+        help="Force cuda, fails if not present",
+    )
     args = parser.parse_args()
+
+    if args.cuda:
+        assert torch.cuda.is_available()
+        assert torch.cuda.device_count() > 0
 
     setup_logging(args.verbose)
 

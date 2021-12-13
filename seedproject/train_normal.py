@@ -479,7 +479,7 @@ def main():
     parser.add_argument(
         "--cuda",
         action="store_true",
-        type=bool,
+        default=False,
         help="Force cuda, fails if not present",
     )
     args = parser.parse_args()

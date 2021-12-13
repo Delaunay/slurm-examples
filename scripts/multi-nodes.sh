@@ -7,6 +7,7 @@
 # we need all nodes to be ready at the same time
 #SBATCH --wait-all-nodes=1
 #SBATCH --partition=long
+#SBATCH --exclude=kepler4,kepler3
 
 # Total resources:
 #   CPU: 16 * 3 = 48
@@ -20,6 +21,9 @@ WORLD_SIZE=$SLURM_JOB_NUM_NODES
 
 module load miniconda/3
 conda activate py39
+
+export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
+export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
 
 srun -l torchrun \
     --nproc_per_node=$SLURM_GPUS_PER_NODE\

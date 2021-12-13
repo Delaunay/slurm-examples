@@ -6,6 +6,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=16Go
 #SBATCH --cpus-per-gpu=4
+#SBATCH --exclude=kepler4,kepler3
 
 export SCRATCH=/network/scratch/
 export EXPERIMENT_NAME='MySuperExperiment'
@@ -43,5 +44,8 @@ cat > $SEARCH_SPACE <<- EOM
         "lr": "orion~loguniform(1e-5, 1.0)",
     }
 EOM
+
+export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
+export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
 
 orion --config $ORION_CONFIG hunt --config $SEARCH_SPACE python ./train.py

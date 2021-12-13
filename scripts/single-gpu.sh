@@ -4,6 +4,8 @@
 #   sbatch --gres=gpu:1 --cpus-per-gpu=4 --mem=16G scripts/single-gpu.sh seedproject/train_normal.py
 #
 
+#SBATCH --exclude=kepler4,kepler3
+
 # Setup our rendez-vous point
 RDV_ADDR=localhost
 WORLD_SIZE=$SLURM_JOB_NUM_NODES

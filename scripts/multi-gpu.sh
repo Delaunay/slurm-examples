@@ -7,6 +7,7 @@
 # we need all nodes to be ready at the same time
 #SBATCH --wait-all-nodes=1
 #SBATCH --partition=long
+#SBATCH --exclude=kepler4,kepler3
 
 # Total resources:
 #   CPU: 16 * 1 = 16
@@ -26,6 +27,9 @@ GPU_COUNT=$(python -c "print(len('$CUDA_VISIBLE_DEVICES'.split(',')))")
 
 # GPU_COUNT=$SLURM_GPUS_PER_NODE
 # GPU_COUNT=$(python -c "import torch; print(torch.cuda.device_count())")
+
+export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
+export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
 
 export OMP_NUM_THREADS=$SLURM_JOB_CPUS_PER_NODE
 

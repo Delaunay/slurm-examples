@@ -22,6 +22,14 @@ from seedproject.models.lenet import LeNet
 log = logging.getLogger()
 
 
+def option(path, default=None, type=str):
+    path = path.replace(".", _).upper()
+    full = f"SEEDPROJECT_{path}"
+    value = type(os.environ.get(full, default))
+    log.info(f"Using {full}={value}")
+    return value
+
+
 class DistributedProcessGroup:
     INSTANCE = None
 
@@ -317,13 +325,13 @@ class Classification:
         )
 
         self.trainset = CIFAR10(
-            "/tmp/datasets",
+            option("dataset.path", "/tmp/datasets"),
             train=True,
             download=True,
             transform=self.train_transform,
         )
         self.testset = CIFAR10(
-            "/tmp/datasets",
+            option("dataset.path", "/tmp/datasets"),
             train=False,
             download=True,
             transform=self.test_transform,
@@ -360,7 +368,7 @@ class Classification:
         )
 
         self.checkpoint = Checkpoint(
-            path="/tmp/chkpt",
+            path=option("checkpoint.path", "/tmp/chkpt"),
             name="LeNetModel",
             every=10,  # Every 10 epochs
             # Object to save in our checkpoint

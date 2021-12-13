@@ -12,8 +12,11 @@ WORLD_SIZE=$SLURM_JOB_NUM_NODES
 module load miniconda/3
 conda activate py39
 
+export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
+export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
+
 cmd="$@"
 
 echo $cmd
 
-$cmd
+python $cmd

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Slurm configuration
+# ===================
+
 #SBATCH --ntasks=1
 
 # Each node will have 1 GPU with 4 CPU-cores
@@ -8,10 +11,15 @@
 #SBATCH --cpus-per-gpu=4
 #SBATCH --exclude=kepler4,kepler3
 
+
+# Config
+# ===================
+
 export SCRATCH=/network/scratch/
 export EXPERIMENT_NAME='MySuperExperiment'
 export SEARCH_SPACE=$SLURM_TMPDIR/search-space.json
 export ORION_CONFIG=$SLURM_TMPDIR/orion-config.yml
+
 
 # Configure Orion
 #    - user hyperband
@@ -44,6 +52,14 @@ cat > $SEARCH_SPACE <<- EOM
         "lr": "orion~loguniform(1e-5, 1.0)",
     }
 EOM
+
+
+# Setup
+# ===================
+
+module load python/3.7
+module load python/3.7/cuda/11.1/cudnn/8.0/pytorch
+source ~/envs/py37/bin/activate
 
 export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
 export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint

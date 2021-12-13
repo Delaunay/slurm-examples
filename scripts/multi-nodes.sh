@@ -4,6 +4,9 @@
 #   sbatch --nodes 3 --gres=gpu:4 --cpus-per-gpu=4 --mem=16G multi-node.sh training_script.py
 #
 
+# Slurm configuration
+# ===================
+
 # we need all nodes to be ready at the same time
 #SBATCH --wait-all-nodes=1
 #SBATCH --partition=long
@@ -14,13 +17,20 @@
 #   RAM: 16 * 3 = 48 Go
 #   GPU:  4 * 3 = 12
 
+# Config
+# ===================
+
 # Setup our rendez-vous point
 RDV_ADDR=$(hostname)
 WORLD_SIZE=$SLURM_JOB_NUM_NODES
-# -----
 
-module load miniconda/3
-conda activate py39
+
+# Setup
+# ===================
+
+module load python/3.7
+module load python/3.7/cuda/11.1/cudnn/8.0/pytorch
+source ~/envs/py37/bin/activate
 
 export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
 export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint

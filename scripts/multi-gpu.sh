@@ -4,6 +4,10 @@
 #   sbatch --nodes 1 --gres=gpu:4 --cpus-per-gpu=4 --mem=16G scripts/multi-gpu.sh seedproject/train_normal.py
 #
 
+
+# Slurm configuration
+# ===================
+
 # we need all nodes to be ready at the same time
 #SBATCH --wait-all-nodes=1
 #SBATCH --partition=long
@@ -14,23 +18,25 @@
 #   RAM: 16 * 1 = 16 Go
 #   GPU:  4 * 1 = 4
 
+# Config
+# ===================
+
 # Setup our rendez-vous point
 RDV_ADDR=localhost
 WORLD_SIZE=$SLURM_JOB_NUM_NODES
-# -----
-
-module load miniconda/3
-conda activate py39
 
 
-GPU_COUNT=$(python -c "print(len('$CUDA_VISIBLE_DEVICES'.split(',')))")
+# Setup
+# ===================
 
-# GPU_COUNT=$SLURM_GPUS_PER_NODE
-# GPU_COUNT=$(python -c "import torch; print(torch.cuda.device_count())")
+module load python/3.7
+module load python/3.7/cuda/11.1/cudnn/8.0/pytorch
+source ~/envs/py37/bin/activate
 
 export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
 export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
 
+export GPU_COUNT=$(python -c "import torch; print(torch.cuda.device_count())")
 export OMP_NUM_THREADS=$SLURM_JOB_CPUS_PER_NODE
 
 cmd="srun -l torchrun \

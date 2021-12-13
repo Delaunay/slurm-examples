@@ -274,7 +274,7 @@ class Checkpoint:
         # as move is atomic
         # in case of a failure the last good checkpoint is not going
         # to be corrupted
-        _, name = tempfile.mkstemp()
+        _, name = tempfile.mkstemp(dir=os.path.dirname(path))
 
         torch.save(state_dict, name)
 

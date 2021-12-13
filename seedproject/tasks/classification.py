@@ -1,20 +1,21 @@
 import torch
-from torch.nn import Module, CrossEntropyLoss
-
-from olympus.tasks.task import Task
-from olympus.metrics import OnlineTrainAccuracy, Accuracy
-from olympus.utils import select, drop_empty_key
-from olympus.resuming import state_dict, load_state_dict
+from olympus.metrics import Accuracy, OnlineTrainAccuracy
 from olympus.observers import (
-    ElapsedRealTime,
-    SampleCount,
-    ProgressView,
-    Speed,
     CheckPointer,
+    ElapsedRealTime,
+    ProgressView,
+    SampleCount,
+    Speed,
 )
+from olympus.resuming import load_state_dict, state_dict
+from olympus.tasks.task import Task
+from olympus.utils import drop_empty_key, select
+from torch.nn import CrossEntropyLoss, Module
 
 
 class Classification(Task):
+    """This reimplements a simplified version of olympus.tasks.classification as an example"""
+
     def __init__(
         self, classifier, optimizer, dataloader, storage=None, metrics=None, device=None
     ):
@@ -58,7 +59,7 @@ class Classification(Task):
         }
 
     def init(self, optimizer=None, model=None, uid=None):
-        """Set our hyperparameters"""
+        """Set our hyperparameters and instantiate the model and our optimizier"""
 
         optimizer = select(optimizer, {})
         model = select(model, {})
@@ -78,6 +79,8 @@ class Classification(Task):
         }
 
         # Get all hyper parameters even the one that were set manually
+        # We will use this to generate a unique ID that will be used
+        # to identify our current training.
         hyperparameters = self.get_current_space()
 
         # Trial Creation and Trial resume
@@ -85,6 +88,7 @@ class Classification(Task):
         self.set_device(self.device)
 
     def fit(self, epochs, context=None):
+        """Train the current model"""
         if self.stopped:
             return
 
@@ -101,12 +105,12 @@ class Classification(Task):
         self._first_epoch = epochs
 
     def epoch(self, epoch, context):
+        """Iterate through the dataset once"""
+
         self.current_epoch = epoch
         self.metrics.new_epoch(epoch, context)
-        iterations = len(self.dataloader) * (epoch - 1)
 
         for step, mini_batch in enumerate(self.dataloader):
-            step += iterations
             self.metrics.new_batch(step, mini_batch, None)
 
             results = self.step(step, mini_batch, context)
@@ -116,6 +120,8 @@ class Classification(Task):
         self.metrics.end_epoch(epoch, context)
 
     def step(self, step, input, context):
+        """Do a single optimizer step"""
+
         self.classifier.train()
         self.optimizer.zero_grad()
 
@@ -173,85 +179,3 @@ class Classification(Task):
 
         self.classifier.train()
         return acc.float(), loss
-
-
-def main(validate=False):
-    """Build the configuration we want to train on the cluster"""
-    from olympus.models import Model
-    from olympus.datasets import DataLoader, Dataset, SplitDataset
-    from olympus.optimizers import Optimizer
-    from olympus.utils import fetch_device
-
-    # -------------------------------------------------------------------------
-    #   Prepare our dataset/model/optimizer
-    # -------------------------------------------------------------------------
-
-    # Split Dataset allow us to generate different split
-    # than the official one
-    dataset = SplitDataset(
-        Dataset(
-            "cifar10",
-            path="/tmp/dataset",
-        ),
-        split_method="original",
-    )
-
-    # Dataloader will generate 3 dataloader for each split
-    loader = DataLoader(
-        dataset,
-        sampler_seed=0,
-        batch_size=256,
-        valid_batch_size=2048,
-    )
-
-    # Some models can accept different input size
-    input_size, target_size = loader.get_shapes()
-    model = Model(
-        "resnet18",
-        input_size=input_size,
-        output_size=target_size[0],
-    )
-
-    optimizer = Optimizer("sgd")
-
-    train, valid, test = loader.get_loaders(hpo_done=False)
-    metrics = []
-    if validate and valid:
-        metrics.append(Accuracy(name="validation", loader=valid))
-
-    if validate and test:
-        metrics.append(Accuracy(name="test", loader=test))
-
-    # -------------------------------------------------------------------------
-    #   Prepare for training
-    # -------------------------------------------------------------------------
-    trainer = Classification(
-        model,
-        optimizer,
-        train,
-        device=fetch_device(),
-        metrics=metrics,
-    )
-
-    # -------------------------------------------------------------------------
-    #   Set our hyper-parameter
-    # -------------------------------------------------------------------------
-
-    trainer.init(
-        optimizer=dict(
-            weight_decay=0.001,
-            lr=0.001,
-            momentum=0.9,
-        ),
-        model=dict(),
-    )
-
-    # -------------------------------------------------------------------------
-    #  Train
-    # -------------------------------------------------------------------------
-
-    trainer.fit(epochs=100)
-
-
-if __name__ == "__main__":
-    main()

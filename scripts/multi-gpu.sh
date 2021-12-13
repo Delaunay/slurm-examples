@@ -21,6 +21,8 @@ WORLD_SIZE=$SLURM_JOB_NUM_NODES
 module load miniconda/3
 conda activate py39
 
+# export OMP_NUM_THREADS=
+
 srun -l torchrun \
     --nproc_per_node=$SLURM_GPUS_PER_NODE\
     --nnodes=$WORLD_SIZE\

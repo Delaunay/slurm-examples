@@ -28,7 +28,7 @@ log = logging.getLogger()
 class DistributedProcessGround:
     INSTANCE = None
 
-    def __init__(self, backend="c10d"):
+    def __init__(self, backend="gloo"):
         self.__rank = int(os.environ.get("LOCAL_RANK", -1))
 
         if self.__rank >= 0:
@@ -109,6 +109,9 @@ class Stats:
 
     def report(self):
         msg = []
+
+        if rank() >= 0:
+            msg.append(f"Rank {rank()}")
 
         if self.epoch_time:
             msg.append(f"Epoch Time {self.epoch_time:.2f}")
@@ -202,7 +205,11 @@ class Checkpoint:
 
         # the other workers need to load the checkpoint
         if rank() > 0:
-            map_location = {"cuda:%d" % 0: "cuda:%d" % rank}
+            # this is made to make it work with a single GPU
+            # with 2 processes on a single GPU
+            # for testing purposes
+            device = rank() % torch.cuda.device_count()
+            map_location = {"cuda:%d" % 0: "cuda:%d" % device}
 
         log.info("Loading checkpoint")
         state_dict = torch.load(
@@ -340,9 +347,15 @@ class Classification:
         )
 
     def start_epoch(self, epoch):
+        if rank() > 0:
+            return
+
         self.stats.start_epoch()
 
     def end_epoch(self, epoch):
+        if rank() > 0:
+            return
+
         self.stats.compute_test(
             self.testloader, self.classifier, self.criterion, self.device
         )
@@ -350,9 +363,13 @@ class Classification:
         self.checkpoint.end_epoch(epoch)
 
     def start_step(self, step):
+        if rank() > 0:
+            return
         pass
 
     def end_step(self, step):
+        if rank() > 0:
+            return
         pass
 
     def start_train(self):
@@ -442,4 +459,10 @@ def main():
 
 
 if __name__ == "__main__":
+    # You can test the script with a single GPU using the command below
+    #
+    #   torchrun --nproc_per_node=2 --nnodes=1 seedproject/train_normal.py
+    #
+    # Launch 2 processes on the device:0
+    #
     main()

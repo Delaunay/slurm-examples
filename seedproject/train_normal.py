@@ -470,6 +470,11 @@ def main():
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
+    parser.add_argument("--batch-size", default=256, type=int, help="Batch size")
+    parser.add_argument("--epochs", default=10, type=int, help="Epochs")
+    parser.add_argument(
+        "--workers", default=4, type=int, help="Number of dataloader worker"
+    )
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--lr", default=0.001, type=float, help="Learning rate")
     parser.add_argument(
@@ -496,9 +501,11 @@ def main():
             weight_decay=args.weight_decay,
             momentum=args.momentum,
             device=fetch_device(),
+            n_worker=args.workers,
+            batch_size=args.batch_size,
         )
 
-        task.train(10)
+        task.train(args.epochs)
     #
 
 

@@ -23,7 +23,7 @@ log = logging.getLogger()
 
 
 def option(path, default=None, type=str):
-    path = path.replace(".", _).upper()
+    path = path.replace(".", "_").upper()
     full = f"SEEDPROJECT_{path}"
     value = type(os.environ.get(full, default))
     log.info(f"Using {full}={value}")

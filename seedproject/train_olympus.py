@@ -1,8 +1,8 @@
 from olympus.datasets import DataLoader, Dataset, SplitDataset, register_dataset
+from olympus.metrics import Accuracy
 from olympus.models import Model
 from olympus.optimizers import Optimizer
 from olympus.utils import fetch_device
-from olympus.metrics import Accuracy
 
 from seedproject.models.lenet import LeNet
 

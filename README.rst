@@ -34,7 +34,7 @@ Use this as a cookiecutter
 Layout
 ~~~~~~
 
-.. code-block:: bash
+.. code-block:: none
 
    <seedproject>/
    ├── .github                   # CI jobs to run on every push

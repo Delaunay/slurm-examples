@@ -121,6 +121,9 @@ done
 
 rm -rf mappings.json
 
+# Rename folder that has been missed
+mv $COOKIED/seedproject $COOKIED/'{{cookiecutter.project_name}}'
+
 # Push the change
 #   use the last commit message of this repository 
 #   for the  cookiecutter

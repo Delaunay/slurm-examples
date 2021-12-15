@@ -43,12 +43,12 @@ EOM
 
 COOKIED=$dest/'{{cookiecutter.project_name}}'/
 
-# Copy the current version of our code in the cookiecutter
-cp -a . $COOKIED
-
 # Remove the things we do not need in the cookie
 rm -rf $COOKIED/scripts/generate_cookie.sh
 rm -rf $COOKIED/.git
+
+# Rename folder that has been missed
+mv $COOKIED/seedproject $COOKIED/'{{cookiecutter.project_name}}'
 
 # Find the instance of all the placeholder variables that
 # needs to be replaced by their cookiecutter template
@@ -71,13 +71,10 @@ jq -c '.[]' mappings.json | while read i; do
     newname=$(echo "$i" | jq -r -c '.[1]')
 
     echo "Replacing $oldname by $newname"
-    find $COOKIED -print0 | xargs -0 sed -e "s/$oldname/\{\{cookiecutter\.$newname\}\}/g"
+    find $COOKIED -type f -print0 | xargs -0 sed -i -e "s/$oldname/\{\{cookiecutter\.$newname\}\}/g"
 done
 
 rm -rf mappings.json
-
-# Rename folder that has been missed
-mv $COOKIED/seedproject $COOKIED/'{{cookiecutter.project_name}}'
 
 # Push the change
 #   use the last commit message of this repository 

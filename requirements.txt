@@ -1,2 +1,4 @@
 git+https://github.com/Delaunay/mlbaselines.git
 torchvision
+hydra-core
+hydra-submitit-launcher

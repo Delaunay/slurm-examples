@@ -16,25 +16,35 @@ update-doc: build-doc serve-doc
 
 
 #
-#
+#	Launch helpers
 #
 
 jobname = output-magic.txt
+resouces = --cpus-per-gpu=4 --mem-per-gpu=16Go
+trainscript = seedproject/train_normal.py -vvv --cuda
+
+hpo:
+	# 100 Jobs with 20 in parallel max
+	# 1 GPU | 4 CPU | 16 Go RAM
+	rm -rf $(jobname)
+	touch $(jobname)
+	sbatch -o $(jobname) --array=0-100%20 --gres=gpu:1 $(resouces) scripts/hpo.sh $(trainscript)
+	tail -f $(jobname)
 
 single-gpu:
 	rm -rf $(jobname)
 	touch $(jobname)
-	sbatch -o $(jobname) --time=10:00 --gres=gpu:1 --cpus-per-gpu=4 --mem=16G scripts/single-gpu.sh seedproject/train_normal.py -vvv --cuda
+	sbatch -o $(jobname) --time=10:00 --gres=gpu:1 $(resouces) scripts/single-gpu.sh $(trainscript)
 	tail -f $(jobname)
 
 multi-gpu:
 	rm -rf $(jobname)
 	touch $(jobname)
-	sbatch -o $(jobname) --time=10:00 --gres=gpu:4 --cpus-per-gpu=4 --mem=16G scripts/multi-gpu.sh seedproject/train_normal.py -vvv --cuda
+	sbatch -o $(jobname) --time=10:00 --gres=gpu:4 $(resouces) scripts/multi-gpu.sh $(trainscript)
 	tail -f $(jobname)
 
 multi-node:
 	rm -rf $(jobname)
 	touch $(jobname)
-	sbatch -o $(jobname) --nodes 3 --time=10:00 --gres=gpu:4 --cpus-per-gpu=4 --mem=16G scripts/multi-nodes.sh seedproject/train_normal.py -vvv --cuda
+	sbatch -o $(jobname) --time=10:00 --nodes 3 --gres=gpu:4 $(resouces) scripts/multi-nodes.sh $(trainscript)
 	tail -f $(jobname)

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -vx
+
 #
 # Generate a cookiecutter version of this repository
 #
@@ -15,13 +17,13 @@ rm -rf seedproject/tasks/__pycache__
 dest=$(mktemp -d)
 
 # Get the latest version of the cookiecutter
-git clone git@github.com:Delaunay/ml-seed.git dest
+git clone git@github.com:Delaunay/ml-seed.git $dest
 
 # Copy the current version of our code in the cookiecutter
-cp -a . dest/'{{cookiecutter.project_name}}'/
+cp -a . $dest/'{{cookiecutter.project_name}}'/
  
 # The basic configs
-cat > dest/cookiecutter.json <<- EOM
+cat > $dest/cookiecutter.json <<- EOM
     {
         "project_name": "myproject",
         "author": "Anonymous",
@@ -38,20 +40,19 @@ cat > dest/cookiecutter.json <<- EOM
 EOM
 
 
-COOKIED=dest/'{{cookiecutter.project_name}}'/
+COOKIED=$dest/'{{cookiecutter.project_name}}'/
 
 # Copy the current version of our code in the cookiecutter
 cp -a . $COOKIED
 
 # Remove the things we do not need in the cookie
 rm -rf $COOKIED/scripts/generate_cookie.sh
+rm -rf $COOKIED/.git
 
 # Find the instance of all the placeholder variables that
 # needs to be replaced by their cookiecutter template
 
-mappings=$(mktmp)
-
-cat > $mappings <<- EOM
+cat > mappings.json <<- EOM
     [
         ["seedproject", "project_name"],
         ["seeddescription", "author"],
@@ -64,7 +65,7 @@ cat > $mappings <<- EOM
     ]
 EOM
 
-jq -c '.[]' $mappings while read i; do
+jq -c '.[]' mappings.json | while read i; do
     oldname=$(echo "$i" | jq -r -c '.[0]')
     newname=$(echo "$i" | jq -r -c '.[1]')
 
@@ -72,7 +73,7 @@ jq -c '.[]' $mappings while read i; do
     find $COOKIED -print0 | xargs -0 sed -e "s/$oldname/\{\{cookiecutter\.$newname\}\}/g"
 done
 
-rm -rf $mappings
+rm -rf mappings.json
 
 # Push the change
 #   use the last commit message of this repository 
@@ -80,11 +81,11 @@ rm -rf $mappings
 PREV=$(pwd)
 MESSAGE=$(git show -s --format=%s)
 
-cd dest
+cd $dest
 git add --all
 git commit -m "$MESSAGE"
-# git push origin master
+git push origin master
 
 # Remove the folder
 cd $PREV
-rm -rf dest
+rm -rf $dest

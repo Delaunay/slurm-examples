@@ -131,7 +131,7 @@ class Stats:
         --------
 
         >>> s = Stats()
-        >>> s.tags('LeNet', 'classification')
+        >>> s.add_tags('LeNet', 'classification')
 
         """
         self.tags.extend(args)

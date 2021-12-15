@@ -117,7 +117,7 @@ class Stats:
         Examples
         --------
 
-        >>> s = Stat()
+        >>> s = Stats()
         >>> s.add('accuracy', 0, 0.10)
         >>> s.add('accuracy', 10, 0.90)
 
@@ -130,7 +130,7 @@ class Stats:
         Examples
         --------
 
-        >>> s = Stat()
+        >>> s = Stats()
         >>> s.tags('LeNet', 'classification')
 
         """

@@ -6,11 +6,6 @@ seedproject
    :alt: Documentation Status
 
 
-.. image:: https://github.com/Delaunay/slurm-examples/actions/workflows/style.yml/badge.svg
-   :target: https://github.com/Delaunay/slurm-examples/actions/workflows/style.yml
-   :alt: Style
-      
-
 .. image:: https://github.com/Delaunay/slurm-examples/actions/workflows/test.yml/badge.svg
    :target: https://github.com/Delaunay/slurm-examples/actions/workflows/test.yml
    :alt: Tests

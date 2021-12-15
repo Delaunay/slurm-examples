@@ -73,6 +73,12 @@ Get started
     cookiecutter https://github.com/Delaunay/ml-seed
     
 
+Example
+~~~~~~~
+
+ml-seed-meta <https://github.com/Delaunay/slurm-examples>`_ is an example of reposity than can be generated
+using this cookie cutter.
+
 Automation
 ~~~~~~~~~~
 
@@ -83,6 +89,15 @@ Auto format your code before pushing
     tox -e run-block
 
     tox -e run-isort
+
+Contributing
+~~~~~~~~~~~~
+
+To update this template you should modify `ml-seed-meta <https://github.com/Delaunay/slurm-examples>`_
+the change will automatically be ported to the cookiecutter version
+
+To update the documentation of this template you should fork this project.
+
 EOM
 
 

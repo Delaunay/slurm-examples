@@ -1,18 +1,18 @@
 seedproject
 =============================
 
-.. image:: https://readthedocs.org/projects/ml-repo-example/badge/?version=latest
-   :target: https://ml-repo-example.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/seedrepo/badge/?version=latest
+   :target: https://seedrepo.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
 
-.. image:: https://github.com/Delaunay/slurm-examples/actions/workflows/test.yml/badge.svg
-   :target: https://github.com/Delaunay/slurm-examples/actions/workflows/test.yml
+.. image:: https://github.com/seedgithub/seedrepo/actions/workflows/test.yml/badge.svg
+   :target: https://github.com/seedgithub/seedrepo/actions/workflows/test.yml
    :alt: Tests
       
 
-.. image:: https://codecov.io/gh/Delaunay/slurm-examples/branch/master/graph/badge.svg
-   :target: https://codecov.io/gh/Delaunay/slurm-examples
+.. image:: https://codecov.io/gh/seedgithub/seedrepo/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/seedgithub/seedrepo
    :alt: Coverage
 
 
@@ -105,5 +105,5 @@ Contributing
 
 .. code-block:: bash
 
-   pip install git+https://github.com/Delaunay/slurm-examples
+   pip install git+https://github.com/seedgithub/seedrepo
 

@@ -20,7 +20,7 @@ update-doc: build-doc serve-doc
 #
 
 jobname = output-magic.txt
-resouces = --cpus-per-gpu=4 --mem-per-gpu=16Go
+resouces = --cpus-per-gpu=4 --mem-per-gpu=16G
 trainscript = seedproject/train_normal.py -vvv --cuda
 
 hpo:

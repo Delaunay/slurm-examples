@@ -74,3 +74,4 @@ docs/src/reference
 # PyBuilder
 target/
 _build/
+notebooks/.ipynb_checkpoints/

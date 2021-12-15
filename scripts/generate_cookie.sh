@@ -35,7 +35,7 @@ cat > $dest/cookiecutter.json <<- EOM
         "email": "anony@mous.com",
         "description": "Python seed project for productivity",
         "copyright": "2021",
-        "url": "http://github.com/test",
+        "url": "http://github.com/github/project",
         "version": "version",
         "license": "BSD 3-Clause License",
         "_copy_without_render": [
@@ -48,7 +48,6 @@ EOM
 rm -rf $COOKIED/scripts/generate_cookie.sh
 rm -rf $COOKIED/.git
  
-
 # Find the instance of all the placeholder variables that
 # needs to be replaced by their cookiecutter template
 

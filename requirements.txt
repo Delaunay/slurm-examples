@@ -1,5 +1,6 @@
 git+https://github.com/Delaunay/mlbaselines.git
 torch
 torchvision
+filelock
 hydra-core
 hydra-submitit-launcher

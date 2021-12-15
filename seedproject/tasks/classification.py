@@ -1,5 +1,5 @@
 import torch
-from olympus.metrics import Accuracy, OnlineTrainAccuracy
+from olympus.metrics import OnlineTrainAccuracy
 from olympus.observers import (
     CheckPointer,
     ElapsedRealTime,
@@ -10,7 +10,7 @@ from olympus.observers import (
 from olympus.resuming import load_state_dict, state_dict
 from olympus.tasks.task import Task
 from olympus.utils import drop_empty_key, select
-from torch.nn import CrossEntropyLoss, Module
+from torch.nn import CrossEntropyLoss
 
 
 class Classification(Task):
@@ -33,14 +33,19 @@ class Classification(Task):
         self.metrics.append(Speed())
 
         if metrics:
-            for m in metrics:
-                self.metrics.append(m)
+            for metric in metrics:
+                self.metrics.append(metric)
 
         self.metrics.append(ProgressView(self.metrics.get("Speed")))
 
         # Add checkpointing if we have a valid storage location
         if storage:
             self.metrics.append(CheckPointer(storage=storage))
+
+        # Used when resuming
+        self._first_epoch = 0
+        self.current_epoch = 0
+        self.hyper_parameters = dict()
 
     def get_space(self):
         """Return hyper parameter space"""
@@ -119,16 +124,16 @@ class Classification(Task):
 
         self.metrics.end_epoch(epoch, context)
 
-    def step(self, step, input, context):
+    def step(self, step, batch, context):
         """Do a single optimizer step"""
 
         self.classifier.train()
         self.optimizer.zero_grad()
 
-        batch, target = input
+        obs, target = batch
 
-        batch = [x.to(device=self.device) for x in batch]
-        predictions = self.classifier(*batch)
+        obs = [obs.to(device=self.device) for x in obs]
+        predictions = self.classifier(*obs)
         loss = self.criterion(predictions, target.to(device=self.device))
 
         self.optimizer.backward(loss)
@@ -144,21 +149,26 @@ class Classification(Task):
         return results
 
     def load_state_dict(self, state, strict=True):
+        """Load a state to resume training"""
         load_state_dict(self, state, strict, force_default=True)
         self._first_epoch = state["epoch"]
         self.current_epoch = state["epoch"]
 
     def state_dict(self, destination=None, prefix="", keep_vars=False):
+        """Save the current state of the training"""
         state = state_dict(self, destination, prefix, keep_vars, force_default=True)
         state["epoch"] = self.current_epoch
         return state
 
     def predict_scores(self, batch):
+        """Compute the prediction score (value between 0-1) that gives the network confidence
+        about the observation and its class"""
         with torch.no_grad():
             data = [x.to(device=self.device) for x in batch]
             return self.classifier(*data)
 
     def predict(self, batch, target=None):
+        """Returns the class witht he highest confidence"""
         scores = self.predict_scores(batch)
 
         _, predicted = torch.max(scores, 1)

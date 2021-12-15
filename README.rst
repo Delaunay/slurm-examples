@@ -21,6 +21,9 @@ seedproject
    :alt: Coverage
 
 
+Getting Started
+~~~~~~~~~~~~~~~
+
 Use this as a cookiecutter
 
 .. code-block:: bash
@@ -31,7 +34,7 @@ Use this as a cookiecutter
 Layout
 ~~~~~~
 
-.. code-block::
+.. code-block:: bash
 
    <seedproject>/
    ├── .github                   # CI jobs to run on every push
@@ -55,6 +58,9 @@ Layout
    │   │   ├── classification.py 
    │   │   └── reinforcement.py  
    │   └── train.py              # main train script
+   ├── tests                     # testing
+   │   ├── test_model.py 
+   |   └── test_loader.py
    ├── .readthedocs.yml          # how to generate the docs in readthedocs
    ├── LICENSE                   # 
    ├── README.rst                # description of current project

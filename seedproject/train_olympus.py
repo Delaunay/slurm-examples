@@ -2,6 +2,7 @@ from olympus.datasets import DataLoader, Dataset, SplitDataset, register_dataset
 from olympus.models import Model
 from olympus.optimizers import Optimizer
 from olympus.utils import fetch_device
+from olympus.metrics import Accuracy
 
 from seedproject.models.lenet import LeNet
 
@@ -10,6 +11,12 @@ from seedproject.models.lenet import LeNet
 from seedproject.tasks.classification import Classification
 
 register_dataset("MyModel", LeNet)
+
+
+def append_if(lst, cond, value):
+    """Append a value to a given list is cond is true"""
+    if cond:
+        lst.append(value)
 
 
 def main(validate=False):
@@ -50,6 +57,7 @@ def main(validate=False):
     train, valid, test = loader.get_loaders(hpo_done=False)
 
     metrics = []
+
     append_if(metrics, validate and valid, Accuracy(name="validation", loader=valid))
     append_if(metrics, validate and test, Accuracy(name="test", loader=test))
 

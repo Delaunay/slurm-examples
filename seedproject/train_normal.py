@@ -4,7 +4,6 @@ import sys
 import tempfile
 import time
 from collections import defaultdict
-from copy import deepcopy
 from dataclasses import dataclass, field
 
 import torch
@@ -15,22 +14,25 @@ from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader, RandomSampler
 from torchvision import transforms
 from torchvision.datasets import CIFAR10
-from torchvision.transforms.functional import to_pil_image
 
 from seedproject.models.lenet import LeNet
 
 log = logging.getLogger()
 
 
-def option(path, default=None, type=str):
+def option(path, default=None, vtype=str):
+    """Fetch a configurable value in the environment"""
+
     path = path.replace(".", "_").upper()
     full = f"SEEDPROJECT_{path}"
-    value = type(os.environ.get(full, default))
-    log.info(f"Using {full}={value}")
+    value = vtype(os.environ.get(full, default))
+    log.info("Using %s=%s", full, value)
     return value
 
 
 class DistributedProcessGroup:
+    """Helper to manage distributed training setup"""
+
     INSTANCE = None
 
     def __init__(self, backend="gloo"):
@@ -52,20 +54,24 @@ class DistributedProcessGroup:
 
     @property
     def rank(self):
+        """Return the current rank of our script -1 if running as a single GPU"""
         return self.__rank
 
     def shutdown(self):
+        """Close the process group if running in distributed mode"""
         if self.__rank >= 0:
             log.info("Process group shutdown")
             dist.destroy_process_group()
 
     def device_id(self):
+        """Return the device id this script should use"""
         if self.rank < 0:
             return -1
 
         return self.rank % torch.cuda.device_count()
 
     def device(self):
+        """Return the device this scrupt should use"""
         if self.rank < 0:
             return torch.device("cuda")
 
@@ -73,6 +79,7 @@ class DistributedProcessGroup:
 
 
 def rank():
+    """Returns current rank"""
     group = DistributedProcessGroup.INSTANCE
     if group is None:
         return -1
@@ -80,6 +87,7 @@ def rank():
 
 
 def device_id():
+    """Returns current device_id"""
     group = DistributedProcessGroup.INSTANCE
     if group is None:
         return -1
@@ -99,7 +107,7 @@ class Stats:
     online_loss: float = None
     test_loss: float = None
     test_accuracy: float = None
-    ts: dict = field(default_factory=lambda: defaultdict(list))
+    series: dict = field(default_factory=lambda: defaultdict(list))
     metrics: dict = field(default_factory=dict)
     tags: list = field(default_factory=list)
 
@@ -114,9 +122,9 @@ class Stats:
         >>> s.add('accuracy', 10, 0.90)
 
         """
-        self.ts[name].append((key, value))
+        self.series[name].append((key, value))
 
-    def tags(self, *args):
+    def add_tags(self, *args):
         """Add tags
 
         Examples
@@ -129,9 +137,11 @@ class Stats:
         self.tags.extend(args)
 
     def value(self, **kwargs):
+        """Add values we want to save for later"""
         self.metrics.update(kwargs)
 
     def report(self):
+        """Generate a progress report"""
         msg = []
 
         if rank() >= 0:
@@ -149,53 +159,66 @@ class Stats:
         return " ".join(msg)
 
     def summary(self):
+        """Print a summary of all the metrics we kept track of"""
         values = []
-        for k, v in self.metrics.items():
-            values.append(f"{k:>30}: {v}")
+        for key, value in self.metrics.items():
+            values.append(f"{key:>30}: {value}")
 
-        for k, v in self.ts.items():
-            k = f"ts.{v}"
-            values.append(f"{k:>30}: {v[-1]}")
+        for key, value in self.series.items():
+            key = f"series.{value}"
+            values.append(f"{key:>30}: {value[-1]}")
 
         return "\n".join(values)
 
     def show(self):
+        """Show a progress report"""
         print("\r" + self.report(), end="")
 
     def start_epoch(self):
+        """Called at the start of an epoch"""
         self.epoch_start = time.time()
 
     def end_epoch(self):
+        """Called at the end of an epoch"""
         self.update_loss()
         self.epoch_time = time.time() - self.epoch_start
         self.show()
 
     def add_step_loss(self, loss):
+        """Keep track of our online losses,
+
+        We use detach so the compute graph diff graph is not impacted by it.
+        We do not use ``.item()`` to prevent a cuda sync.
+        We will wait until the end of the epoch to accumulate all the partial losses.
+        """
         self.online_losses.append(loss.detach())
 
     def update_loss(self):
+        """Make a summation of all the loss we gathered so far"""
         self.online_loss = sum([loss.item() for loss in self.online_losses]) / len(
             self.online_losses
         )
         self.online_losses = []
 
     def compute_test(self, testset, model, criterion, device):
+        """Compute the test accuracy on a frozen/eval/inference model"""
+
         model.eval()
         with torch.no_grad():
             values = []
             count = 0
             acc = 0
 
-            for x, y in testset:
-                x, y = x.to(device), y.to(device)
+            for obs, target in testset:
+                obs, target = obs.to(device), target.to(device)
 
-                yy = model(x)
-                loss = criterion(yy, y)
+                scores = model(obs)
+                loss = criterion(scores, target)
                 values.append(loss.detach())
 
-                _, predicted = torch.max(yy, 1)
-                acc += (predicted == y).sum()
-                count += len(y)
+                _, predicted = torch.max(scores, 1)
+                acc += (predicted == target).sum()
+                count += len(target)
 
             self.test_loss = sum([loss.item() for loss in values]) / len(values)
             self.test_accuracy = acc / count
@@ -203,6 +226,8 @@ class Stats:
 
 
 class Checkpoint:
+    """Basic checkpointer that saves all the object it is given periodically"""
+
     def __init__(self, path, name, every=2, **kwargs):
         self.data = kwargs
         self.every = every
@@ -210,11 +235,16 @@ class Checkpoint:
         self.name = name
 
     def end_epoch(self, epoch):
+        """Called when the epoch finishes.
+        Used to determined if we should save a new checkpoint or not
+
+        """
         if epoch % self.every > 0:
             return
         self.save_checkpoint()
 
     def load_checkpoint(self):
+        """Load a save state to resume training"""
         map_location = None
 
         path = os.path.join(self.path, self.name + ".chkpt")
@@ -240,18 +270,19 @@ class Checkpoint:
             map_location=map_location,
         )
 
-        for k, v in self.data.items():
-            if k not in state_dict:
+        for key, value in self.data.items():
+            if key not in state_dict:
                 continue
 
-            state = state_dict[k]
+            state = state_dict[key]
 
-            if hasattr(v, "load_state_dict"):
-                v.load_state_dict(state)
+            if hasattr(value, "load_state_dict"):
+                value.load_state_dict(state)
             else:
-                state_dict[k] = state
+                state_dict[key] = state
 
     def save_checkpoint(self):
+        """Save the current state of the trained to make it resumable"""
         log.info("save checkpoint")
 
         # only rank 0 can save the model
@@ -260,11 +291,11 @@ class Checkpoint:
 
         state_dict = dict()
 
-        for k, v in self.data.items():
-            if hasattr(v, "state_dict"):
-                state_dict[k] = v.state_dict()
+        for key, value in self.data.items():
+            if hasattr(value, "state_dict"):
+                state_dict[key] = value.state_dict()
             else:
-                state_dict[k] = v
+                state_dict[key] = value
 
         os.makedirs(self.path, exist_ok=True)
         path = os.path.join(self.path, self.name + ".chkpt")
@@ -283,9 +314,9 @@ class Checkpoint:
         os.replace(name, path)
 
 
-def dataparallel(model, rank=None, device=None):
+def dataparallel(model, device=None):
     """Wrap the model to make it parallel if rank is not none"""
-    if rank >= 0:
+    if rank() >= 0:
         log.info("enabling multi-gpu")
         return DistributedDataParallel(model, device_ids=[device_id()])
 
@@ -293,6 +324,8 @@ def dataparallel(model, rank=None, device=None):
 
 
 class Classification:
+    """Train a given model to classify observation"""
+
     def __init__(
         self,
         lr=0.001,
@@ -358,7 +391,7 @@ class Classification:
             input_size=(3, 32, 32),
             num_classes=10,
         ).to(self.device)
-        self.classifier = dataparallel(self.local, rank(), self.device)
+        self.classifier = dataparallel(self.local, self.device)
 
         self.optimizer = optim.SGD(
             self.classifier.parameters(),
@@ -378,12 +411,14 @@ class Classification:
         )
 
     def start_epoch(self, epoch):
+        """Called right before the start of an epoch"""
         if rank() > 0:
             return
 
         self.stats.start_epoch()
 
     def end_epoch(self, epoch):
+        """Called right after the end of an epoch"""
         if rank() > 0:
             return
 
@@ -394,33 +429,37 @@ class Classification:
         self.checkpoint.end_epoch(epoch)
 
     def start_step(self, step):
+        """Called before a model process the next batch"""
         if rank() > 0:
             return
-        pass
 
     def end_step(self, step):
+        """Called after the model weights were update after a step"""
         if rank() > 0:
             return
-        pass
 
     def start_train(self):
+        """Called when train starts"""
         self.checkpoint.load_checkpoint()
 
     def end_train(self):
+        """Called when training has finished"""
         self.checkpoint.save_checkpoint()
         print()
 
     def train(self, epochs):
+        """Train for epochs"""
         self.start_train()
         start = 0
 
-        for e in range(start, epochs):
-            self.epoch(e)
+        for epoch in range(start, epochs):
+            self.epoch(epoch)
 
         self.end_train()
 
-    def epoch(self, e):
-        self.start_epoch(e)
+    def epoch(self, epoch):
+        """Do a full epoch once"""
+        self.start_epoch(epoch)
 
         for step, mini_batch in enumerate(self.trainloader):
             self.start_step(step)
@@ -429,9 +468,10 @@ class Classification:
 
             self.end_step(step)
 
-        self.end_epoch(e)
+        self.end_epoch(epoch)
 
     def step(self, step, batch):
+        """Do a single optimization step"""
         self.classifier.train()
         self.optimizer.zero_grad()
 
@@ -445,6 +485,8 @@ class Classification:
 
 
 def setup_logging(verbose):
+    """Configure the logging level given a verbose count"""
+
     log_level = (5 - min(verbose, 4)) * 10
     level_name = logging.getLevelName(log_level)
     print(f"Setting log level: {level_name} ({log_level})")
@@ -466,7 +508,7 @@ def fetch_device():
 
 
 def main():
-    import sys
+    """Run the trainer until completion"""
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
@@ -495,7 +537,7 @@ def main():
 
     setup_logging(args.verbose)
 
-    with DistributedProcessGroup() as group:
+    with DistributedProcessGroup():
         task = Classification(
             lr=args.lr,
             weight_decay=args.weight_decay,

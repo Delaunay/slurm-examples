@@ -53,8 +53,9 @@ class LeNet(nn.Module):
                 "There is no LeNet architecture for an input size {}".format(input_size)
             )
 
-    def forward(self, x):
-        out = nn.functional.relu(self.conv1(x))
+    def forward(self, batch):
+        """Foward pass of the model"""
+        out = nn.functional.relu(self.conv1(batch))
         out = self.pool1(out)
         out = nn.functional.relu(self.conv2(out))
         out = self.pool2(out)

@@ -20,8 +20,10 @@ dest=$(mktemp -d)
 git clone git@github.com:Delaunay/ml-seed.git $dest
 
 # Copy the current version of our code in the cookiecutter
-cp -a . $dest/'{{cookiecutter.project_name}}'/
- 
+rsync -av --progress . $dest/'{{cookiecutter.project_name}}'/   \
+    --exclude .git                                              \
+    --exclude __pycache__
+
 # The basic configs
 cat > $dest/cookiecutter.json <<- EOM
     {
@@ -37,6 +39,44 @@ cat > $dest/cookiecutter.json <<- EOM
             ".github"
         ]   
     }
+EOM
+
+cat > $dest/README.rst <<- EOM
+    Machine Learning Seed Repository
+    ===============================
+
+    Features:
+
+    * Sphinx doc generation
+
+        * Read the docs ready
+
+    * Github CI
+
+        * Test Coverage + Doctest
+        * black formating
+        * pylint
+        * isort
+        * docs8
+
+    * slurm launch script
+
+    * pip installable
+
+    ```
+    pip install cookiecutter
+    cookiecutter https://github.com/Delaunay/ml-seed
+    ```
+
+    ## Automation
+
+    Auto format your code before pushing
+
+    ```
+    tox -e run-block
+
+    tox -e run-isort
+    ```
 EOM
 
 
@@ -82,9 +122,10 @@ PREV=$(pwd)
 MESSAGE=$(git show -s --format=%s)
 
 cd $dest
+git checkout -b auto
 git add --all
 git commit -m "$MESSAGE"
-git push origin master
+git push origin auto
 
 # Remove the folder
 cd $PREV

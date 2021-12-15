@@ -11,7 +11,7 @@ seedproject
    :alt: Tests
       
 
-.. image:: https://codecov.io/gh/Delaunay/slurm-examples/branch/main/graph/badge.svg?token=ELkrYgJ9kI
+.. image:: https://codecov.io/gh/Delaunay/slurm-examples/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/Delaunay/slurm-examples
    :alt: Coverage
 

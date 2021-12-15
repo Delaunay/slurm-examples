@@ -56,13 +56,16 @@ mv $COOKIED/seedproject $COOKIED/'{{cookiecutter.project_name}}'
 cat > mappings.json <<- EOM
     [
         ["seedproject", "project_name"],
-        ["seeddescription", "author"],
+        ["seedauthor", "author"],
         ["seed@email", "email"],
         ["seeddescription", "description"],
         ["seedcopyright", "copyright"],
         ["seedurl", "url"],
         ["seedversion", "version"],
-        ["seedlicense", "license"]
+
+        ["Delaunay", "seedauthor"],
+        ["ml-repo-example", "project_name"],
+        ["slurm-examples", "project_name"]
     ]
 EOM
 

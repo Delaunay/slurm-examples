@@ -16,6 +16,7 @@ from torchvision import transforms
 from torchvision.datasets import CIFAR10
 
 from seedproject.models.lenet import LeNet
+from seedproject.dataset.caching import CopyDataset
 
 log = logging.getLogger()
 
@@ -356,15 +357,18 @@ class Classification:
                 ),
             ]
         )
-
-        self.trainset = CIFAR10(
-            option("dataset.path", "/tmp/datasets"),
+        self.trainset = CopyDataset(
+            CIFAR10,
+            option("dataset.src", "/network/datasets/cifar10"),
+            option("dataset.dest", "/tmp/datasets/cifar10"),
             train=True,
             download=True,
             transform=self.train_transform,
         )
-        self.testset = CIFAR10(
-            option("dataset.path", "/tmp/datasets"),
+        self.testset = CopyDataset(
+            CIFAR10,
+            option("dataset.src", "/network/datasets/cifar10"),
+            option("dataset.dest", "/tmp/datasets/cifar10"),
             train=False,
             download=True,
             transform=self.test_transform,

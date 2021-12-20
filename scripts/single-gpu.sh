@@ -13,8 +13,8 @@
 # Setup
 # ===================
 
-module load python/3.8
-source $HOME/py38/bin/activate
+module load miniconda/3
+conda activate py39
 
 export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
 export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint

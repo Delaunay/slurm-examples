@@ -4,5 +4,5 @@
 #   Configure our python environment
 #
 
-module load python/3.8
-source $HOME/py38/bin/activate
+module load miniconda/3
+conda activate py39

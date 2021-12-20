@@ -28,8 +28,9 @@ WORLD_SIZE=$SLURM_JOB_NUM_NODES
 # Setup
 # ===================
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-source $SCRIPT_DIR/env.sh
+module load python/3.7
+module load python/3.7/cuda/11.1/cudnn/8.0/pytorch
+source ~/envs/py37/bin/activate
 
 export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
 export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint

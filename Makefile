@@ -23,6 +23,18 @@ jobname = output-magic.txt
 resouces = --cpus-per-gpu=4 --mem-per-gpu=16G
 trainscript = seedproject/train_normal.py -vvv --cuda
 
+conda-setup:
+	rm -rf $(jobname)
+	touch $(jobname)
+	sbatch -o $(jobname) --gres=gpu:1 --cpus-per-gpu=1 --mem-per-gpu=1G scripts/setup_conda.sh
+	tail -f $(jobname)
+
+venv-setup:
+	rm -rf $(jobname)
+	touch $(jobname)
+	sbatch -o $(jobname) --gres=gpu:1 --cpus-per-gpu=1 --mem-per-gpu=1G scripts/setup_virtualenv.sh
+	tail -f $(jobname)
+
 hpo:
 	# 100 Jobs with 20 in parallel max
 	# 1 GPU | 4 CPU | 16 Go RAM

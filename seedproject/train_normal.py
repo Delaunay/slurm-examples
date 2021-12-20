@@ -14,6 +14,7 @@ from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader, RandomSampler
 from torchvision import transforms
 from torchvision.datasets import CIFAR10
+from torch.distributed.elastic.multiprocessing.errors import record
 
 from seedproject.models.lenet import LeNet
 from seedproject.dataset.caching import CopyDataset
@@ -511,6 +512,7 @@ def fetch_device():
     return torch.device(default)
 
 
+@record
 def main():
     """Run the trainer until completion"""
     from argparse import ArgumentParser

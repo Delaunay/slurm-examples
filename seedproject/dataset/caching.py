@@ -10,8 +10,8 @@ def _copy(src, dest):
 
 class CopyDataset:
     def __init__(self, dataset, src, dest=None, *args, **kwargs):
-        if src != dest and src is not None and dest is not None:
-            _copy(src, dest)
+        # if src != dest and src is not None and dest is not None:
+        #    _copy(src, dest)
 
         self.dataset = dataset(dest, *args, **kwargs)
 

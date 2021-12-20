@@ -1,9 +1,10 @@
 #!/bin/bash
 
-
-conda remove --name py39 --all
+#SBATCH --exclude=kepler4,kepler3
 
 module load miniconda/3
+conda remove --name py39 --all -y
+
 conda create -n py39 python=3.9 -y
 conda activate py39
 

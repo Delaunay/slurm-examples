@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#SBATCH --exclude=kepler4,kepler3
+
 module load python/3.9
 virtualenv $HOME/py39
 

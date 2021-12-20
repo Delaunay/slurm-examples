@@ -52,7 +52,7 @@ single-gpu:
 multi-gpu:
 	rm -rf $(jobname)
 	touch $(jobname)
-	sbatch -o $(jobname) --time=10:00 --gres=gpu:4 $(resouces) scripts/multi-gpu.sh $(trainscript)
+	sbatch -o $(jobname) --time=10:00 --gres=gpu:2 $(resouces) scripts/multi-gpu.sh $(trainscript)
 	tail -f $(jobname)
 
 multi-node:

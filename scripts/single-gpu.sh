@@ -24,3 +24,5 @@ cmd="$@"
 echo $cmd
 
 python $cmd
+
+cp -a $SLURM_TMPDIR/dataset ~/scratch/dataset

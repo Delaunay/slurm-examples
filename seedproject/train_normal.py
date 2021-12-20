@@ -358,12 +358,17 @@ class Classification:
                 ),
             ]
         )
+
+        if rank() <= 0:
+            # download the dataset first
+            CIFAR10(option("dataset.dest", "/tmp/datasets/cifar10"), download=True)
+            dist.barrier()
+
         self.trainset = CopyDataset(
             CIFAR10,
             option("dataset.src", "/network/datasets/cifar10"),
             option("dataset.dest", "/tmp/datasets/cifar10"),
             train=True,
-            download=rank() <= 0,
             transform=self.train_transform,
         )
         self.testset = CopyDataset(
@@ -371,7 +376,6 @@ class Classification:
             option("dataset.src", "/network/datasets/cifar10"),
             option("dataset.dest", "/tmp/datasets/cifar10"),
             train=False,
-            download=rank() <= 0,
             transform=self.test_transform,
         )
         self.stats = Stats()

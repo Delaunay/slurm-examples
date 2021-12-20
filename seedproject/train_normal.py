@@ -362,7 +362,7 @@ class Classification:
             option("dataset.src", "/network/datasets/cifar10"),
             option("dataset.dest", "/tmp/datasets/cifar10"),
             train=True,
-            download=True,
+            download=rank() <= 0,
             transform=self.train_transform,
         )
         self.testset = CopyDataset(
@@ -370,7 +370,7 @@ class Classification:
             option("dataset.src", "/network/datasets/cifar10"),
             option("dataset.dest", "/tmp/datasets/cifar10"),
             train=False,
-            download=True,
+            download=rank() <= 0,
             transform=self.test_transform,
         )
         self.stats = Stats()
@@ -506,7 +506,7 @@ def fetch_device():
         default = "cuda"
 
     if rank() >= 0:
-        torch.device(f"{default}:{device_id()}")
+        return torch.device(f"{default}:{device_id()}")
 
     return torch.device(default)
 
@@ -519,7 +519,7 @@ def main():
     parser.add_argument("--batch-size", default=256, type=int, help="Batch size")
     parser.add_argument("--epochs", default=10, type=int, help="Epochs")
     parser.add_argument(
-        "--workers", default=4, type=int, help="Number of dataloader worker"
+        "--workers", default=2, type=int, help="Number of dataloader worker"
     )
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--lr", default=0.001, type=float, help="Learning rate")

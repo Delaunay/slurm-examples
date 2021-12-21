@@ -5,3 +5,4 @@ torchvision
 filelock
 hydra-core
 hydra-submitit-launcher
+orion

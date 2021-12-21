@@ -50,19 +50,14 @@ cat > $ORION_CONFIG <<- EOM
     database:
         host: $SCRATCH/${EXPERIMENT_NAME}_orion.pkl
         type: pickleddb
-EOM
 
-# Configure the experiment search space
-cat > $SEARCH_SPACE <<- EOM
-    {
-        "lr": "orion~loguniform(1e-5, 1.0)",
-        "weight_decay": "orion~loguniform(1e-10, 1e-3)",
-        "momentum": "orion~loguniform(0.9, 1)"
-    }
+    lr: 'orion~loguniform(1e-5, 1.0)'
+    weight_decay: 'orion~loguniform(1e-10, 1e-3)'
+    momentum: 'orion~loguniform(0.9, 1)'
 EOM
 
 
 # Run
 # ===================
 
-orion --config $ORION_CONFIG hunt --config $SEARCH_SPACE python ./train.py
+orion hunt --config $ORION_CONFIG python ./train.py

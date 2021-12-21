@@ -22,6 +22,7 @@ update-doc: build-doc serve-doc
 jobname = output-magic.txt
 resouces = --cpus-per-gpu=2 --mem-per-gpu=16G
 trainscript = seedproject/train_normal.py -vvv --cuda
+seq = $(shell ls | wc -l)
 
 conda-setup:
 	rm -rf $(jobname)
@@ -40,7 +41,7 @@ hpo:
 	# 1 GPU | 4 CPU | 16 Go RAM
 	rm -rf $(jobname)
 	touch $(jobname)
-	sbatch -o $(jobname) --array=0-100 --gres=gpu:1 $(resouces) scripts/hpo.sh $(trainscript)
+	SEQ=$(seq) sbatch -o $(jobname) --array=0-100 --gres=gpu:1 $(resouces) scripts/hpo.sh $(trainscript)
 	tail -f $(jobname)
 
 single-gpu:

@@ -17,7 +17,7 @@ conda activate py39
 # Environment
 # ===================
 
-export EXPERIMENT_NAME="seedexperiment_$(date +%s)"
+export EXPERIMENT_NAME="seedexperiment"
 
 
 # Constant
@@ -37,7 +37,7 @@ export SPACE_CONFIG=$SLURM_TMPDIR/space-config.json
 #
 cat > $ORION_CONFIG <<- EOM
     experiment:
-        name: $EXPERIMENT_NAME
+        name: ${EXPERIMENT_NAME}_${SEQ}
         algorithms:
             hyperband:
                 seed: 0

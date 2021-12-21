@@ -25,6 +25,8 @@
 RDV_ADDR=localhost
 WORLD_SIZE=$SLURM_JOB_NUM_NODES
 
+export GPU_COUNT=$(python -c "import torch; print(torch.cuda.device_count())")
+export OMP_NUM_THREADS=$SLURM_JOB_CPUS_PER_NODE
 
 # Setup
 # ===================
@@ -33,9 +35,6 @@ conda activate py39
 
 export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
 export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
-
-export GPU_COUNT=$(python -c "import torch; print(torch.cuda.device_count())")
-export OMP_NUM_THREADS=$SLURM_JOB_CPUS_PER_NODE
 
 cmd="srun -l torchrun \
     --nproc_per_node=$GPU_COUNT\

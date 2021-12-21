@@ -20,7 +20,7 @@ conda activate py39
 export EXPERIMENT_NAME='seedexperiment'
 
 # Constant
-export SCRATCH=/network/scratch/
+export SCRATCH=~/scratch
 export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
 export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
 export ORION_CONFIG=$SLURM_TMPDIR/orion-config.yml

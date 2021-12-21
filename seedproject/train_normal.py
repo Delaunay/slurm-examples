@@ -15,6 +15,7 @@ from torch.utils.data import DataLoader, RandomSampler
 from torchvision import transforms
 from torchvision.datasets import CIFAR10
 from torch.distributed.elastic.multiprocessing.errors import record
+from orion.client import report_objective
 
 from seedproject.models.lenet import LeNet
 from seedproject.dataset.caching import CopyDataset
@@ -382,6 +383,7 @@ class Classification:
         device=None,
         n_worker=4,
         batch_size=256,
+        uid=None,
     ):
         self.device = device
         self.test_transform = transforms.Compose(
@@ -459,7 +461,7 @@ class Classification:
 
         self.checkpoint = Checkpoint(
             path=option("checkpoint.path", "/tmp/chkpt"),
-            name="LeNetModel",
+            name=f"LeNetModel_{uid}",
             every=10,  # Every 10 epochs
             # Object to save in our checkpoint
             model=self.local,  # Save the module BEFORE the DataParallel wrapper
@@ -564,6 +566,31 @@ def fetch_device():
     return torch.device(default)
 
 
+def compute_identity(sample, size):
+    """Compute a unique hash out of a dictionary
+    Parameters
+    ----------
+    sample: dict
+        Dictionary to compute the hash from
+    size: int
+        size of the unique hash
+    """
+    import hashlib
+    from collections import OrderedDict
+
+    sample_hash = hashlib.sha256()
+
+    for k, v in sorted(sample.items()):
+        sample_hash.update(k.encode("utf8"))
+
+        if isinstance(v, (dict, OrderedDict)):
+            sample_hash.update(compute_identity(v, size).encode("utf8"))
+        else:
+            sample_hash.update(str(v).encode("utf8"))
+
+    return sample_hash.hexdigest()[:size]
+
+
 @record
 def main():
     """Run the trainer until completion"""
@@ -584,6 +611,12 @@ def main():
     )
     parser.add_argument("--momentum", default=0.9, type=float, help="Momentum")
     parser.add_argument(
+        "--identity",
+        default="manual",
+        type=str,
+        help="Unique name of the trial for checkpointing",
+    )
+    parser.add_argument(
         "--cuda",
         action="store_true",
         default=False,
@@ -603,8 +636,12 @@ def main():
         with open(args.config, "r") as fp:
             config = json.load(fp)
 
+        identity = compute_identity(config, 16)
+
         args = vars(args)
         args.update(config)
+        args.pop("config")
+        args["identity"] = identity
         args = Namespace(**args)
         print(args)
 
@@ -628,9 +665,12 @@ def main():
             device=fetch_device(),
             n_worker=args.workers,
             batch_size=args.batch_size,
+            uid=args.identity,
         )
 
         task.train(args.epochs)
+
+        report_objective(task.stats.test_loss, name="loss")
     #
 
 

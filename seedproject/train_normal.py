@@ -39,11 +39,17 @@ class DistributedProcessGroup:
 
     def __init__(self, backend="gloo"):
         self.__rank = int(os.environ.get("LOCAL_RANK", -1))
+        self.__group = int(os.environ.get("GROUP_RANK", -1))
+        self.__grank = int(os.environ.get("RANK", 0))
+
+        self._log_prefix = f"[{self.__rank}][{self.__group}]"
+        if self.__rank < 0:
+            self._log_prefix = ""
 
         if self.__rank >= 0:
-            log.info("Initializing process group")
+            log.info("%s Initializing process group", self._log_prefix)
             dist.init_process_group(backend)
-            log.info("Process group initialized")
+            log.info("%s Process group initialized", self._log_prefix)
 
         assert DistributedProcessGroup.INSTANCE is None
         DistributedProcessGroup.INSTANCE = self
@@ -53,6 +59,20 @@ class DistributedProcessGroup:
 
     def __exit__(self, *args, **kwargs):
         self.shutdown()
+
+    @property
+    def info(self):
+        """return a string identifying the current worker"""
+        return self._log_prefix
+
+    @property
+    def group(self):
+        """Current node this work belongs"""
+        return self.__group
+
+    @property
+    def global_rank(self):
+        return self.__grank
 
     @property
     def rank(self):
@@ -86,6 +106,14 @@ def rank():
     if group is None:
         return -1
     return group.rank
+
+
+def grank():
+    """Returns current rank"""
+    group = DistributedProcessGroup.INSTANCE
+    if group is None:
+        return -1
+    return group.global_rank
 
 
 def device_id():
@@ -250,45 +278,51 @@ class Checkpoint:
         map_location = None
 
         path = os.path.join(self.path, self.name + ".chkpt")
+
         if not os.path.exists(path):
             log.info("No checkpoint found")
             self.save_checkpoint()
+            dist.barrier()
             return
 
-        if rank() >= 0:
+        if grank() >= 0:
             # wait for rank 0 to save the checkpoint
             dist.barrier()
 
         # the other workers need to load the checkpoint
-        if rank() > 0:
+        if grank() > 0:
             # this is made to make it work with a single GPU
             # with 2 processes on a single GPU
             # for testing purposes
             map_location = {"cuda:%d" % 0: "cuda:%d" % device_id()}
 
-        log.info("Loading checkpoint")
-        state_dict = torch.load(
-            path,
-            map_location=map_location,
-        )
+            log.info("Loading checkpoint")
+            state_dict = torch.load(
+                path,
+                map_location=map_location,
+            )
 
-        for key, value in self.data.items():
-            if key not in state_dict:
-                continue
+            for key, value in self.data.items():
+                if key not in state_dict:
+                    continue
 
-            state = state_dict[key]
+                state = state_dict[key]
 
-            if hasattr(value, "load_state_dict"):
-                value.load_state_dict(state)
-            else:
-                state_dict[key] = state
+                if hasattr(value, "load_state_dict"):
+                    value.load_state_dict(state)
+                else:
+                    state_dict[key] = state
+
+        # wait for everybody to load the checkpoint
+        if grank() >= 0:
+            dist.barrier()
 
     def save_checkpoint(self):
         """Save the current state of the trained to make it resumable"""
         log.info("save checkpoint")
 
         # only rank 0 can save the model
-        if rank() > 0:
+        if grank() > 0:
             return
 
         state_dict = dict()
@@ -319,7 +353,7 @@ class Checkpoint:
 def dataparallel(model, device=None):
     """Wrap the model to make it parallel if rank is not none"""
     if rank() >= 0:
-        log.info("enabling multi-gpu")
+        log.info("enabling multi-gpu %s", device_id())
         return DistributedDataParallel(model, device_ids=[device_id()])
 
     return model
@@ -555,7 +589,7 @@ def main():
         world_size = int(os.environ.get("WORLD_SIZE", 1))
         args.batch_size = args.batch_size * world_size
 
-        print(f"  GPU batch: {args.batch_size / world_size}")
+        print(f"  GPU batch: {args.batch_size // world_size}")
         print(f"Total batch: {args.batch_size}")
 
         task = Classification(

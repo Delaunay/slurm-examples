@@ -31,7 +31,10 @@ rsync -av --progress . $COOKIED/                                \
 cat > $dest/cookiecutter.json <<- EOM
     {
         "project_name": "myproject",
+        "PROJECT_NAME": "MY_PROJECT",
         "author": "Anonymous",
+        "github_nickname": "githubacct",
+        "github_repo": "reponame",
         "email": "anony@mous.com",
         "description": "Python seed project for productivity",
         "copyright": "2021",
@@ -61,9 +64,9 @@ cat > mappings.json <<- EOM
         ["seedcopyright", "copyright"],
         ["seedurl", "url"],
         ["seedversion", "version"],
-
-        ["seedgithub", "author"],
-        ["seedrepo", "project_name"]
+        ["seedgithub", "github_nickname"],
+        ["seedrepo", "github_repo"],
+        ["SEEDPROJECT", "PROJECT_NAME"],
     ]
 EOM
 

@@ -106,7 +106,9 @@ def barrier():
     if group is None:
         return
 
-    dist.barrier()
+    if group.rank() >= 0:
+        dist.barrier()
+
     return
 
 

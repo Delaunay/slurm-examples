@@ -524,7 +524,9 @@ def main():
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
-    parser.add_argument("--batch-size", default=256, type=int, help="Batch size")
+    parser.add_argument(
+        "--batch-size", default=256, type=int, help="Batch size (per GPU)"
+    )
     parser.add_argument("--epochs", default=10, type=int, help="Epochs")
     parser.add_argument(
         "--workers", default=2, type=int, help="Number of dataloader worker"
@@ -550,6 +552,9 @@ def main():
     setup_logging(args.verbose)
 
     with DistributedProcessGroup():
+        world_size = int(os.environ.get('WORLD_SIZE', 1))
+        args.batch_size = args.batch_size * world_size
+
         task = Classification(
             lr=args.lr,
             weight_decay=args.weight_decay,

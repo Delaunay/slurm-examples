@@ -56,6 +56,8 @@ EOM
 cat > $SEARCH_SPACE <<- EOM
     {
         "lr": "orion~loguniform(1e-5, 1.0)",
+        "weight_decay": "orion~loguniform(1e-10, 1e-3)",
+        "momentum": "orion~loguniform(0.9, 1)"
     }
 EOM
 

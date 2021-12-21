@@ -100,6 +100,16 @@ class DistributedProcessGroup:
         return torch.device(f"cuda:{self.device_id()}")
 
 
+def barrier():
+    """block until all workers reach this"""
+    group = DistributedProcessGroup.INSTANCE
+    if group is None:
+        return
+
+    dist.barrier()
+    return
+
+
 def rank():
     """Returns current rank"""
     group = DistributedProcessGroup.INSTANCE
@@ -282,12 +292,12 @@ class Checkpoint:
         if not os.path.exists(path):
             log.info("No checkpoint found")
             self.save_checkpoint()
-            dist.barrier()
+            barrier()
             return
 
         if grank() >= 0:
             # wait for rank 0 to save the checkpoint
-            dist.barrier()
+            barrier()
 
         # the other workers need to load the checkpoint
         if grank() > 0:
@@ -315,7 +325,7 @@ class Checkpoint:
 
         # wait for everybody to load the checkpoint
         if grank() >= 0:
-            dist.barrier()
+            barrier()
 
     def save_checkpoint(self):
         """Save the current state of the trained to make it resumable"""
@@ -398,7 +408,7 @@ class Classification:
             CIFAR10(option("dataset.dest", "/tmp/datasets/cifar10"), download=True)
 
         # wait for rank 0 to download the dataset
-        dist.barrier()
+        barrier()
 
         self.trainset = CopyDataset(
             CIFAR10,

@@ -22,10 +22,17 @@
 
 # Setup our rendez-vous point
 RDV_ADDR=$(hostname)
-WORLD_SIZE=$SLURM_JOB_NUM_NODES
+#                 $SLURM_NNODES
+export WORLD_SIZE=$SLURM_JOB_NUM_NODES
 
-export GPU_COUNT=$(python -c "import torch; print(torch.cuda.device_count())")
-export OMP_NUM_THREADS=$SLURM_JOB_CPUS_PER_NODE
+#                $(python -c "import torch; print(torch.cuda.device_count())")
+export GPU_COUNT=$SLURM_GPUS_ON_NODE 
+
+#                      $SLURM_CPUS_ON_NODE
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_GPU
+
+#             $SLURM_MEM_PER_NODE
+export MEMORY=$SLURM_MEM_PER_GPU
 
 # Setup
 # ===================

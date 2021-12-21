@@ -577,6 +577,12 @@ def main():
         default=False,
         help="Force cuda, fails if not present",
     )
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="",
+        help="useless, just for orion-space config",
+    )
     args = parser.parse_args()
 
     if args.cuda:

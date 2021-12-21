@@ -17,13 +17,15 @@ conda activate py39
 # Environment
 # ===================
 
-export EXPERIMENT_NAME='seedexperiment'
+export EXPERIMENT_NAME="seedexperiment_$(date +%s)"
+
 
 # Constant
 export SCRATCH=~/scratch
 export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
 export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
 export ORION_CONFIG=$SLURM_TMPDIR/orion-config.yml
+export SPACE_CONFIG=$SLURM_TMPDIR/space-config.yml
 
 # Configure Orion
 # ===================
@@ -38,7 +40,7 @@ cat > $ORION_CONFIG <<- EOM
         name: $EXPERIMENT_NAME
         algorithms:
             hyperband:
-                seed: None
+                seed: 0
         max_broken: 10
 
     worker:
@@ -52,17 +54,20 @@ cat > $ORION_CONFIG <<- EOM
     database:
         host: $SCRATCH/${EXPERIMENT_NAME}_orion.pkl
         type: pickleddb
+EOM
 
-    lr: 'orion~loguniform(1e-5, 1.0)'
-    weight_decay: 'orion~loguniform(1e-10, 1e-3)'
-    momentum: 'orion~loguniform(0.9, 1)'
+cat > $SPACE_CONFIG <<- EOM
+    epochs: orion~fidelity(10, 20, base=2)
+    lr: orion~loguniform(1e-5, 1.0)
+    weight_decay: orion~loguniform(1e-10, 1e-3)
+    momentum: orion~loguniform(0.9, 1.0)
 EOM
 
 
 # Run
 # ===================
 
-cmd="orion hunt --config $ORION_CONFIG python $@"
+cmd="orion hunt --config $ORION_CONFIG python $@ --config $SPACE_CONFIG"
 
 echo $cmd
 $cmd

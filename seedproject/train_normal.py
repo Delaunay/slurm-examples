@@ -555,7 +555,7 @@ def fetch_device():
 @record
 def main():
     """Run the trainer until completion"""
-    from argparse import ArgumentParser
+    from argparse import ArgumentParser, Namespace
 
     parser = ArgumentParser()
     parser.add_argument(
@@ -580,10 +580,21 @@ def main():
     parser.add_argument(
         "--config",
         type=str,
-        default="",
-        help="useless, just for orion-space config",
+        default=None,
+        help="",
     )
     args = parser.parse_args()
+
+    if args.config is not None:
+        import json
+
+        with open(args.config, "r") as fp:
+            config = json.load(fp)
+
+        args = vars(args)
+        args.update(config)
+        args = Namespace(**args)
+        print(args)
 
     if args.cuda:
         assert torch.cuda.is_available()

@@ -25,7 +25,7 @@ export SCRATCH=~/scratch
 export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
 export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
 export ORION_CONFIG=$SLURM_TMPDIR/orion-config.yml
-export SPACE_CONFIG=$SLURM_TMPDIR/space-config.yml
+export SPACE_CONFIG=$SLURM_TMPDIR/space-config.json
 
 # Configure Orion
 # ===================
@@ -57,10 +57,12 @@ cat > $ORION_CONFIG <<- EOM
 EOM
 
 cat > $SPACE_CONFIG <<- EOM
-    epochs: orion~fidelity(10, 20, base=2)
-    lr: orion~loguniform(1e-5, 1.0)
-    weight_decay: orion~loguniform(1e-10, 1e-3)
-    momentum: orion~loguniform(0.9, 1.0)
+    {
+        "epochs": "orion~fidelity(10, 20, base=2)",
+        "lr": "orion~loguniform(1e-5, 1.0)",
+        "weight_decay": "orion~loguniform(1e-10, 1e-3)",
+        "momentum": "orion~loguniform(0.9, 1.0)"
+    }
 EOM
 
 

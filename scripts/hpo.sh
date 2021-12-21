@@ -1,4 +1,5 @@
 #!/bin/bash
+set -evx
 
 # Slurm configuration
 # ===================
@@ -7,7 +8,13 @@
 #SBATCH --exclude=kepler4,kepler3
 
 
-# Config
+# Python
+# ===================
+
+module load miniconda/3
+conda activate py39
+
+# Environment
 # ===================
 
 export SCRATCH=/network/scratch/
@@ -17,6 +24,8 @@ export ORION_CONFIG=$SLURM_TMPDIR/orion-config.yml
 
 
 # Configure Orion
+# ===================
+# 
 #    - user hyperband
 #    - launch 4 workers for each tasks (one for each CPU)
 #    - worker dies if idle for more than a minute
@@ -50,10 +59,8 @@ cat > $SEARCH_SPACE <<- EOM
 EOM
 
 
-# Setup
+# Run
 # ===================
-module load miniconda/3
-conda activate py39
 
 export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
 export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint

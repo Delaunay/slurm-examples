@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -evx
 
 # Usage:
 #   sbatch --gres=gpu:1 --cpus-per-gpu=4 --mem=16G scripts/single-gpu.sh seedproject/train_normal.py
@@ -10,14 +10,22 @@
 #SBATCH --exclude=kepler4,kepler3
 
 
-# Setup
+# Python
 # ===================
 
 module load miniconda/3
 conda activate py39
 
+
+# Environment
+# ===================
+
 export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
 export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
+
+
+# Run
+# ===================
 
 cmd="$@"
 
@@ -25,4 +33,3 @@ echo $cmd
 
 python $cmd
 
-cp -a $SLURM_TMPDIR/dataset ~/scratch/dataset

@@ -362,8 +362,8 @@ class Classification:
         if rank() <= 0:
             # download the dataset first
             CIFAR10(option("dataset.dest", "/tmp/datasets/cifar10"), download=True)
-            dist.barrier()
 
+        dist.barrier()
         self.trainset = CopyDataset(
             CIFAR10,
             option("dataset.src", "/network/datasets/cifar10"),

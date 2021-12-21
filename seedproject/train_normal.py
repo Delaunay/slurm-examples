@@ -552,8 +552,11 @@ def main():
     setup_logging(args.verbose)
 
     with DistributedProcessGroup():
-        world_size = int(os.environ.get('WORLD_SIZE', 1))
+        world_size = int(os.environ.get("WORLD_SIZE", 1))
         args.batch_size = args.batch_size * world_size
+
+        print(f"  GPU batch: {args.batch_size / world_size}")
+        print(f"Total batch: {args.batch_size}")
 
         task = Classification(
             lr=args.lr,

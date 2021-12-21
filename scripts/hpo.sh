@@ -62,7 +62,7 @@ EOM
 # Run
 # ===================
 
-cmd"orion hunt --config $ORION_CONFIG python $@"
+cmd="orion hunt --config $ORION_CONFIG python $@"
 
 echo $cmd
 $cmd

@@ -1,5 +1,5 @@
 #!/bin/bash
-set -evx
+set -v
 
 # Slurm configuration
 # ===================
@@ -19,7 +19,6 @@ conda activate py39
 
 export SCRATCH=/network/scratch/
 export EXPERIMENT_NAME='MySuperExperiment'
-export SEARCH_SPACE=$SLURM_TMPDIR/search-space.json
 export ORION_CONFIG=$SLURM_TMPDIR/orion-config.yml
 export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
 export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
@@ -60,4 +59,4 @@ EOM
 # Run
 # ===================
 
-orion hunt --config $ORION_CONFIG python ./train.py
+orion hunt --config $ORION_CONFIG python ./train_normal.py

@@ -17,11 +17,13 @@ conda activate py39
 # Environment
 # ===================
 
+export EXPERIMENT_NAME='seedexperiment'
+
+# Constant
 export SCRATCH=/network/scratch/
-export EXPERIMENT_NAME='MySuperExperiment'
-export ORION_CONFIG=$SLURM_TMPDIR/orion-config.yml
 export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
 export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
+export ORION_CONFIG=$SLURM_TMPDIR/orion-config.yml
 
 # Configure Orion
 # ===================
@@ -33,6 +35,7 @@ export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
 #
 cat > $ORION_CONFIG <<- EOM
     experiment:
+        name: $EXPERIMENT_NAME
         algorithms:
             hyperband:
                 seed: None
@@ -59,4 +62,7 @@ EOM
 # Run
 # ===================
 
-orion hunt --config $ORION_CONFIG python "$@"
+cmd"orion hunt --config $ORION_CONFIG python $@"
+
+echo $cmd
+$cmd

@@ -40,7 +40,7 @@ hpo:
 	# 1 GPU | 4 CPU | 16 Go RAM
 	rm -rf $(jobname)
 	touch $(jobname)
-	sbatch -o $(jobname) --array=0-100%20 --gres=gpu:1 $(resouces) scripts/hpo.sh $(trainscript)
+	sbatch -o $(jobname) --array=1%20 --gres=gpu:1 $(resouces) scripts/hpo.sh $(trainscript)
 	tail -f $(jobname)
 
 single-gpu:

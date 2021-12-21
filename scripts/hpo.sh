@@ -59,4 +59,4 @@ EOM
 # Run
 # ===================
 
-orion hunt --config $ORION_CONFIG python ./train_normal.py
+orion hunt --config $ORION_CONFIG python "$@"

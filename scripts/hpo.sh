@@ -21,7 +21,8 @@ export SCRATCH=/network/scratch/
 export EXPERIMENT_NAME='MySuperExperiment'
 export SEARCH_SPACE=$SLURM_TMPDIR/search-space.json
 export ORION_CONFIG=$SLURM_TMPDIR/orion-config.yml
-
+export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
+export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
 
 # Configure Orion
 # ===================
@@ -61,8 +62,5 @@ EOM
 
 # Run
 # ===================
-
-export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
-export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
 
 orion --config $ORION_CONFIG hunt --config $SEARCH_SPACE python ./train.py

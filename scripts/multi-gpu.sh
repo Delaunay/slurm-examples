@@ -32,14 +32,17 @@ RDV_ADDR=localhost
 
 export WORLD_SIZE=$SLURM_JOB_NUM_NODES
 
-#                $SLURM_GPUS_ON_NODE
+#                $SLURM_JOB_GPUS=1,2,3,5
+#                $GPU_DEVICE_ORDINAL=0,1,2,3
+#                $CUDA_VISIBLE_DEVICES=0,1,2,3
 export GPU_COUNT=$(python -c "import torch; print(torch.cuda.device_count())")  
+export GPU_COUNT=$(python -c "import os; print(len(os.environ['GPU_DEVICE_ORDINAL'].split(',')))") 
+export GPU_COUNT=$(($SLURM_CPUS_ON_NODE / $SLURM_CPUS_PER_GPU))  
 
 export OMP_NUM_THREADS=$SLURM_CPUS_ON_NODE
 
 export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
 export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
-
 
 # Run
 # ===================

@@ -18,13 +18,12 @@ class CIFAR10(Dataset):
 
         if os.path.exists(CIFAR10.MILA_PATH):
             # Copy our cached version locally
+
+            # <root>/cifar10/cifar-10-batches-py/*data_batch_*
+            #
             download = False
             src = os.path.join(CIFAR10.MILA_PATH)
-            dst = os.path.join(root, CIFAR10.FOLDER)
-            _copy(src, dst)
-
-            for name in os.listdir(dst):
-                print(name)
+            _copy(src, root)
 
         train_dataset = datasets.CIFAR10(root=root, train=True, download=download)
         test_dataset = datasets.CIFAR10(root=root, train=False, download=download)

@@ -37,7 +37,6 @@ Features
 * Hyper parameter search with Orion
 
 
-
 Getting Started
 ~~~~~~~~~~~~~~~
 

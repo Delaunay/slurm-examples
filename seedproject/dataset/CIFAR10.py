@@ -32,9 +32,9 @@ class CIFAR10(Dataset):
 
         n = len(self.full)
 
-        self.n_train = int(n * 0.60)
-        self.n_test = len(test_dataset)
-        self.n_valid = self.n_train - self.n_test
+        self.train_size = int(n * 0.60)
+        self.test_size = len(test_dataset)
+        self.valid_size = len(train_dataset) - self.train_size
 
     def __getitem__(self, idx):
         return self.full[idx]
@@ -42,7 +42,7 @@ class CIFAR10(Dataset):
     def __len__(self):
         return len(self.full)
 
-    def splits(self, final=False):
+    def splits(self, final=False, train_transform=None, test_transform=None):
         splits = split(self)
 
         trainset = Subset(self, splits.train)
@@ -59,7 +59,24 @@ class CIFAR10(Dataset):
             testset = None
 
         return (
-            trainset,
-            validset,
-            testset,
+            Transformed(trainset, train_transform) if trainset else None,
+            Transformed(validset, test_transform) if validset else None,
+            Transformed(testset, test_transform) if testset else None,
         )
+
+
+class Transformed(Dataset):
+    def __init__(self, dataset, transform=None):
+        self.transform = transform
+        self.dataset = dataset
+
+    def __getitem__(self, idx):
+        data, target = self.dataset[idx]
+
+        if self.transform is not None:
+            data = self.transform(data)
+
+        return data, target
+
+    def __len__(self):
+        return len(self.dataset)

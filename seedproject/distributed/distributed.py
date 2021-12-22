@@ -89,6 +89,7 @@ class DistributedProcessGroup:
 
         return self.rank % torch.cuda.device_count()
 
+    @property
     def device(self):
         """Return the device this scrupt should use"""
         if self.rank < 0:
@@ -164,3 +165,14 @@ def dataparallel(model, device=None):
         return DistributedDataParallel(model, device_ids=[device_id()])
 
     return model
+
+
+def record(fn, error_handler=None):
+    if rank() >= 0:
+        from torch.distributed.elastic.multiprocessing.errors import (
+            record as torch_record,
+        )
+
+        return torch_record(fn, error_handler)
+
+    return fn

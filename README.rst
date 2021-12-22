@@ -33,7 +33,9 @@ Features
 
 * Checkpoints
 * Dataset Local Copy
-* Dataset
+* Dataset splits (train, valid, test)
+* Hyper parameter search with Orion
+
 
 
 Getting Started

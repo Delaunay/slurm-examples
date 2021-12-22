@@ -7,16 +7,15 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 import torch
-import torch.distributed as dist
 import torch.optim as optim
 from torch.nn import CrossEntropyLoss
 
 from torch.utils.data import DataLoader, RandomSampler
 from torchvision import transforms
-from torch.distributed.elastic.multiprocessing.errors import record
+
 from orion.client import report_objective
 
-from seedproject.distributed.distributed as dist
+import seedproject.distributed.distributed as dist
 from seedproject.models.lenet import LeNet
 from seedproject.dataset.CIFAR10 import CIFAR10
 from seedproject.checkpoint import Checkpoint
@@ -84,8 +83,8 @@ class Stats:
         """Generate a progress report"""
         msg = []
 
-        if rank() >= 0:
-            msg.append(f"Rank {rank()}")
+        if dist.rank() >= 0:
+            msg.append(f"Rank {dist.rank()}")
 
         if self.epoch_time:
             msg.append(f"Epoch Time {self.epoch_time:.2f}")
@@ -207,7 +206,10 @@ class Classification:
         # wait for rank 0 to download the dataset
         dist.barrier()
         dataset = CIFAR10(option("dataset.dest", "/tmp/datasets/cifar10"))
-        trainset, validset, testset = dataset.splits()
+        self.trainset, self.validset, self.testset = dataset.splits(
+            train_transform=self.train_transform,
+            test_transform=self.test_transform,
+        )
 
         self.stats = Stats()
 
@@ -221,8 +223,8 @@ class Classification:
             sampler=self.sampler,
         )
 
-        self.testloader = DataLoader(
-            self.testset,
+        self.validloader = DataLoader(
+            self.validset,
             batch_size=2048,
             num_workers=n_worker,
         )
@@ -263,7 +265,7 @@ class Classification:
             return
 
         self.stats.compute_test(
-            self.testloader, self.classifier, self.criterion, self.device
+            self.validloader, self.classifier, self.criterion, self.device
         )
         self.stats.end_epoch()
         self.checkpoint.end_epoch(epoch)
@@ -360,7 +362,7 @@ def compute_identity(sample, size):
     return sample_hash.hexdigest()[:size]
 
 
-@record
+@dist.record
 def main():
     """Run the trainer until completion"""
     from argparse import ArgumentParser, Namespace
@@ -420,7 +422,7 @@ def main():
 
     setup_logging(args.verbose)
 
-    with DistributedProcessGroup():
+    with dist.DistributedProcessGroup():
         world_size = int(os.environ.get("WORLD_SIZE", 1))
         args.batch_size = args.batch_size * world_size
 
@@ -431,7 +433,7 @@ def main():
             lr=args.lr,
             weight_decay=args.weight_decay,
             momentum=args.momentum,
-            device=fetch_device(),
+            device=dist.device(),
             n_worker=args.workers,
             batch_size=args.batch_size,
             uid=args.identity,

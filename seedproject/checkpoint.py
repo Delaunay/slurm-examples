@@ -2,7 +2,7 @@ import os
 import logging
 import tempfile
 
-from seedproject.distributed.distributed as dist
+import seedproject.distributed.distributed as dist
 
 
 log = logging.getLogger()

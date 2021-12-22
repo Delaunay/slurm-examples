@@ -10,15 +10,16 @@ import torch
 import torch.distributed as dist
 import torch.optim as optim
 from torch.nn import CrossEntropyLoss
-from torch.nn.parallel import DistributedDataParallel
+
 from torch.utils.data import DataLoader, RandomSampler
 from torchvision import transforms
-from torchvision.datasets import CIFAR10
 from torch.distributed.elastic.multiprocessing.errors import record
 from orion.client import report_objective
 
+from seedproject.distributed.distributed as dist
 from seedproject.models.lenet import LeNet
-from seedproject.dataset.caching import CopyDataset
+from seedproject.dataset.CIFAR10 import CIFAR10
+from seedproject.checkpoint import Checkpoint
 
 log = logging.getLogger()
 
@@ -31,110 +32,6 @@ def option(path, default=None, vtype=str):
     value = vtype(os.environ.get(full, default))
     log.info("Using %s=%s", full, value)
     return value
-
-
-class DistributedProcessGroup:
-    """Helper to manage distributed training setup"""
-
-    INSTANCE = None
-
-    def __init__(self, backend="gloo"):
-        self.__rank = int(os.environ.get("LOCAL_RANK", -1))
-        self.__group = int(os.environ.get("GROUP_RANK", -1))
-        self.__grank = int(os.environ.get("RANK", 0))
-
-        self._log_prefix = f"[{self.__rank}][{self.__group}]"
-        if self.__rank < 0:
-            self._log_prefix = ""
-
-        if self.__rank >= 0:
-            log.info("%s Initializing process group", self._log_prefix)
-            dist.init_process_group(backend)
-            log.info("%s Process group initialized", self._log_prefix)
-
-        assert DistributedProcessGroup.INSTANCE is None
-        DistributedProcessGroup.INSTANCE = self
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args, **kwargs):
-        self.shutdown()
-
-    @property
-    def info(self):
-        """return a string identifying the current worker"""
-        return self._log_prefix
-
-    @property
-    def group(self):
-        """Current node this work belongs"""
-        return self.__group
-
-    @property
-    def global_rank(self):
-        return self.__grank
-
-    @property
-    def rank(self):
-        """Return the current rank of our script -1 if running as a single GPU"""
-        return self.__rank
-
-    def shutdown(self):
-        """Close the process group if running in distributed mode"""
-        if self.__rank >= 0:
-            log.info("Process group shutdown")
-            dist.destroy_process_group()
-
-    def device_id(self):
-        """Return the device id this script should use"""
-        if self.rank < 0:
-            return -1
-
-        return self.rank % torch.cuda.device_count()
-
-    def device(self):
-        """Return the device this scrupt should use"""
-        if self.rank < 0:
-            return torch.device("cuda")
-
-        return torch.device(f"cuda:{self.device_id()}")
-
-
-def barrier():
-    """block until all workers reach this"""
-    group = DistributedProcessGroup.INSTANCE
-    if group is None:
-        return
-
-    if group.rank >= 0:
-        dist.barrier()
-
-    return
-
-
-def rank():
-    """Returns current rank"""
-    group = DistributedProcessGroup.INSTANCE
-    if group is None:
-        return -1
-    return group.rank
-
-
-def grank():
-    """Returns current rank"""
-    group = DistributedProcessGroup.INSTANCE
-    if group is None:
-        return -1
-    return group.global_rank
-
-
-def device_id():
-    """Returns current device_id"""
-    group = DistributedProcessGroup.INSTANCE
-    if group is None:
-        return -1
-    return group.device_id()
 
 
 @dataclass
@@ -268,110 +165,6 @@ class Stats:
         model.train()
 
 
-class Checkpoint:
-    """Basic checkpointer that saves all the object it is given periodically"""
-
-    def __init__(self, path, name, every=2, **kwargs):
-        self.data = kwargs
-        self.every = every
-        self.path = path
-        self.name = name
-
-    def end_epoch(self, epoch):
-        """Called when the epoch finishes.
-        Used to determined if we should save a new checkpoint or not
-
-        """
-        if epoch % self.every > 0:
-            return
-        self.save_checkpoint()
-
-    def load_checkpoint(self):
-        """Load a save state to resume training"""
-        map_location = None
-
-        path = os.path.join(self.path, self.name + ".chkpt")
-
-        if not os.path.exists(path):
-            log.info("No checkpoint found")
-            self.save_checkpoint()
-            barrier()
-            return
-
-        if grank() >= 0:
-            # wait for rank 0 to save the checkpoint
-            barrier()
-
-        # the other workers need to load the checkpoint
-        if grank() > 0:
-            # this is made to make it work with a single GPU
-            # with 2 processes on a single GPU
-            # for testing purposes
-            map_location = {"cuda:%d" % 0: "cuda:%d" % device_id()}
-
-            log.info("Loading checkpoint")
-            state_dict = torch.load(
-                path,
-                map_location=map_location,
-            )
-
-            for key, value in self.data.items():
-                if key not in state_dict:
-                    continue
-
-                state = state_dict[key]
-
-                if hasattr(value, "load_state_dict"):
-                    value.load_state_dict(state)
-                else:
-                    state_dict[key] = state
-
-        # wait for everybody to load the checkpoint
-        if grank() >= 0:
-            barrier()
-
-    def save_checkpoint(self):
-        """Save the current state of the trained to make it resumable"""
-        log.info("save checkpoint")
-
-        # only rank 0 can save the model
-        if grank() > 0:
-            return
-
-        state_dict = dict()
-
-        for key, value in self.data.items():
-            if hasattr(value, "state_dict"):
-                state_dict[key] = value.state_dict()
-            else:
-                state_dict[key] = value
-
-        os.makedirs(self.path, exist_ok=True)
-        path = os.path.join(self.path, self.name + ".chkpt")
-
-        # Save to a temporary file and then move it into the
-        # final file, this is to prevent writing bad checkpoint
-        # as move is atomic
-        # in case of a failure the last good checkpoint is not going
-        # to be corrupted
-        _, name = tempfile.mkstemp(dir=os.path.dirname(path))
-
-        torch.save(state_dict, name)
-
-        # name and path need to be on the same filesystem on POSIX
-        # (mv requirement)
-        os.replace(name, path)
-
-
-def dataparallel(model, device=None):
-    """Wrap the model to make it parallel if rank is not none"""
-    if rank() >= 0:
-        log.info("enabling multi-gpu %s", device_id())
-        return DistributedDataParallel(model, device_ids=[device_id()])
-
-    return model
-
-
 class Classification:
     """Train a given model to classify observation"""
 
@@ -407,27 +200,15 @@ class Classification:
             ]
         )
 
-        if rank() <= 0:
-            # download the dataset first
+        if dist.has_dataset_autority():
+            # download the dataset first or copy
             CIFAR10(option("dataset.dest", "/tmp/datasets/cifar10"), download=True)
 
         # wait for rank 0 to download the dataset
-        barrier()
+        dist.barrier()
+        dataset = CIFAR10(option("dataset.dest", "/tmp/datasets/cifar10"))
+        trainset, validset, testset = dataset.splits()
 
-        self.trainset = CopyDataset(
-            CIFAR10,
-            option("dataset.src", "/network/datasets/cifar10"),
-            option("dataset.dest", "/tmp/datasets/cifar10"),
-            train=True,
-            transform=self.train_transform,
-        )
-        self.testset = CopyDataset(
-            CIFAR10,
-            option("dataset.src", "/network/datasets/cifar10"),
-            option("dataset.dest", "/tmp/datasets/cifar10"),
-            train=False,
-            transform=self.test_transform,
-        )
         self.stats = Stats()
 
         self.criterion = CrossEntropyLoss()
@@ -450,7 +231,7 @@ class Classification:
             input_size=(3, 32, 32),
             num_classes=10,
         ).to(self.device)
-        self.classifier = dataparallel(self.local, self.device)
+        self.classifier = dist.dataparallel(self.local, self.device)
 
         self.optimizer = optim.SGD(
             self.classifier.parameters(),
@@ -471,14 +252,14 @@ class Classification:
 
     def start_epoch(self, epoch):
         """Called right before the start of an epoch"""
-        if rank() > 0:
+        if not dist.has_weight_autority():
             return
 
         self.stats.start_epoch()
 
     def end_epoch(self, epoch):
         """Called right after the end of an epoch"""
-        if rank() > 0:
+        if not dist.has_weight_autority():
             return
 
         self.stats.compute_test(
@@ -489,12 +270,12 @@ class Classification:
 
     def start_step(self, step):
         """Called before a model process the next batch"""
-        if rank() > 0:
+        if not dist.has_weight_autority():
             return
 
     def end_step(self, step):
         """Called after the model weights were update after a step"""
-        if rank() > 0:
+        if not dist.has_weight_autority():
             return
 
     def start_train(self):
@@ -552,18 +333,6 @@ def setup_logging(verbose):
 
     handler = logging.StreamHandler(sys.stderr)
     logging.basicConfig(level=level_name, handlers=[handler])
-
-
-def fetch_device():
-    """Set the default device to CPU if cuda is not available"""
-    default = "cpu"
-    if torch.cuda.is_available():
-        default = "cuda"
-
-    if rank() >= 0:
-        return torch.device(f"{default}:{device_id()}")
-
-    return torch.device(default)
 
 
 def compute_identity(sample, size):

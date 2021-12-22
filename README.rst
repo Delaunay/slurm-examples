@@ -16,6 +16,26 @@ seedproject
    :alt: Coverage
 
 
+Features
+~~~~~~~~
+
+* Environment setup scripts
+
+  * miniconda
+  * virtualenv
+
+* Generic  Slurm launch scripts
+
+  * Single GPU
+  * Multi GPU
+  * Multi Node
+  * Hyperparameter Optimization
+
+* Checkpoints
+* Dataset Local Copy
+* Dataset
+
+
 Getting Started
 ~~~~~~~~~~~~~~~
 

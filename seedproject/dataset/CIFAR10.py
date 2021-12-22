@@ -10,6 +10,10 @@ def _copy(src, dst):
     shutil.copytree(src, dst, dirs_exist_ok=True)
 
 
+def ignore_git_annex(src, names):
+    return [src == ".git" for _ in names]
+
+
 class CIFAR10(Dataset):
     FOLDER = "cifar10"
     MILA_PATH = "/network/datasets/cifar10.var/cifar10_torchvision/"
@@ -23,7 +27,7 @@ class CIFAR10(Dataset):
             #
             download = False
             src = os.path.join(CIFAR10.MILA_PATH)
-            shutil.copytree(src, root, ignore=True, dirs_exist_ok=True)
+            shutil.copytree(src, root, ignore=ignore_git_annex, dirs_exist_ok=True)
 
         train_dataset = datasets.CIFAR10(root=root, train=True, download=download)
         test_dataset = datasets.CIFAR10(root=root, train=False, download=download)

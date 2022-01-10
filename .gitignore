@@ -76,3 +76,5 @@ target/
 _build/
 notebooks/.ipynb_checkpoints/
 .vscode/
+
+output-magic.txt

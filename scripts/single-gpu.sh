@@ -20,7 +20,7 @@ conda activate py39
 # Environment
 # ===================
 
-export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
+export SEEDPROJECT_DATASET_DEST=$SLURM_TMPDIR/dataset
 export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
 
 

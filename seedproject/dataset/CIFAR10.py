@@ -17,17 +17,21 @@ def ignore_git_annex(src, names):
 class CIFAR10(Dataset):
     FOLDER = "cifar10"
     MILA_PATH = "/network/datasets/cifar10.var/cifar10_torchvision/"
+    WAS_COPIED = False
 
     def __init__(self, root, download=False):
         src = os.path.join(CIFAR10.MILA_PATH, "cifar-10-batches-py")
 
-        if os.path.exists(CIFAR10.MILA_PATH) and not os.path.exists(src):
+        if os.path.exists(CIFAR10.MILA_PATH):
             # Copy our cached version locally
 
             # <root>/cifar10/cifar-10-batches-py/*data_batch_*
             #
             download = False
-            shutil.copytree(CIFAR10.MILA_PATH, root, dirs_exist_ok=True)
+
+            if not CIFAR10.WAS_COPIED:
+                shutil.copytree(CIFAR10.MILA_PATH, root, dirs_exist_ok=True)
+                CIFAR10.WAS_COPIED = True
 
         train_dataset = datasets.CIFAR10(root=root, train=True, download=download)
         test_dataset = datasets.CIFAR10(root=root, train=False, download=download)

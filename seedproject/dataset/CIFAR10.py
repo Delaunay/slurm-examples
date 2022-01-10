@@ -27,7 +27,7 @@ class CIFAR10(Dataset):
             #
             download = False
             src = os.path.join(CIFAR10.MILA_PATH)
-            shutil.copytree(src, root)
+            shutil.copytree(src, root, dirs_exist_ok=True)
 
         train_dataset = datasets.CIFAR10(root=root, train=True, download=download)
         test_dataset = datasets.CIFAR10(root=root, train=False, download=download)

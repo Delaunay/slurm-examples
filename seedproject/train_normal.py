@@ -17,7 +17,7 @@ from orion.client import report_objective
 
 import seedproject.distributed.distributed as dist
 from seedproject.models.lenet import LeNet
-from seedproject.dataset.CIFAR10 import CIFAR10
+from seedproject.dataset.CIFAR10 import CIFAR10, Transformed
 from seedproject.checkpoint import Checkpoint
 
 log = logging.getLogger()
@@ -178,6 +178,17 @@ class Classification:
         uid=None,
     ):
         self.device = device
+
+        # download the dataset first or copy
+        if dist.has_dataset_autority():
+            CIFAR10(option("dataset.dest", "/tmp/datasets/cifar10"), download=True)
+
+        # wait for rank 0 to download the dataset
+        dist.barrier()
+
+        dataset = CIFAR10(option("dataset.dest", "/tmp/datasets/cifar10"))
+        trainset, validset, testset = dataset.splits()
+
         self.test_transform = transforms.Compose(
             [
                 transforms.ToTensor(),
@@ -189,7 +200,6 @@ class Classification:
 
         self.train_transform = transforms.Compose(
             [
-                # to_pil_image,
                 transforms.RandomCrop(32, padding=4),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
@@ -199,17 +209,9 @@ class Classification:
             ]
         )
 
-        if dist.has_dataset_autority():
-            # download the dataset first or copy
-            CIFAR10(option("dataset.dest", "/tmp/datasets/cifar10"), download=True)
-
-        # wait for rank 0 to download the dataset
-        dist.barrier()
-        dataset = CIFAR10(option("dataset.dest", "/tmp/datasets/cifar10"))
-        self.trainset, self.validset, self.testset = dataset.splits(
-            train_transform=self.train_transform,
-            test_transform=self.test_transform,
-        )
+        self.trainset = Transformed(trainset, self.train_transform)
+        self.validset = Transformed(validset, self.test_transform) if validset else None
+        self.testset = Transformed(testset, self.test_transform) if testset else None
 
         self.stats = Stats()
 

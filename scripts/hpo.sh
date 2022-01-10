@@ -22,7 +22,7 @@ export EXPERIMENT_NAME="seedexperiment"
 
 # Constant
 export SCRATCH=~/scratch
-export SEEDPROJECT_DATASET_PATH=$SLURM_TMPDIR/dataset
+export SEEDPROJECT_DATASET_DEST=$SLURM_TMPDIR/dataset
 export SEEDPROJECT_CHECKPOINT_PATH=~/scratch/checkpoint
 export ORION_CONFIG=$SLURM_TMPDIR/orion-config.yml
 export SPACE_CONFIG=$SCRATCH/space-config_${SEQ}.json

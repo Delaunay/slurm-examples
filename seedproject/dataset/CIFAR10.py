@@ -20,13 +20,7 @@ class CIFAR10(Dataset):
     WAS_COPIED = False
 
     def __init__(self, root, download=False):
-        src = os.path.join(CIFAR10.MILA_PATH, "cifar-10-batches-py")
-
         if os.path.exists(CIFAR10.MILA_PATH):
-            # Copy our cached version locally
-
-            # <root>/cifar10/cifar-10-batches-py/*data_batch_*
-            #
             download = False
 
             if not CIFAR10.WAS_COPIED:

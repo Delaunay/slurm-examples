@@ -21,8 +21,8 @@ update-doc: build-doc serve-doc
 
 jobname = output-magic.txt
 resouces = --cpus-per-gpu=2 --mem-per-gpu=16G
-trainscript_single = seedproject/train.py -vvv --cuda --batch-size 2048
-trainscript_dist = seedproject/train_distributed.py -vvv --cuda --batch-size 2048
+trainscript_single = seedproject/train.py
+trainscript_dist = seedproject/train_distributed.py 
 seq = $(shell ls | wc -l)
 
 conda-setup:

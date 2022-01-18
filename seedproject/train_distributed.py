@@ -84,7 +84,7 @@ def train(args):
     )
 
     device = torch.device(f"cuda:{rank}")
-    model = Net()
+    model = Net().to(device=device)
 
     if grank <= 0:
         torch.save(model.state_dict(), PATH)

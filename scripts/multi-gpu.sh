@@ -40,6 +40,7 @@ export WORLD_SIZE=$SLURM_JOB_NUM_NODES
 #                $CUDA_VISIBLE_DEVICES=0,1,2,3
 # export GPU_COUNT=$(python -c "import os; print(len(os.environ['GPU_DEVICE_ORDINAL'].split(',')))") 
 # export GPU_COUNT=$(($SLURM_CPUS_ON_NODE / $SLURM_CPUS_PER_GPU))
+export GPU_COUNT=$(python -c "import torch; print(torch.cuda.device_count())")  
 export OMP_NUM_THREADS=$SLURM_CPUS_ON_NODE
 
 export SEEDPROJECT_DATASET_DEST=$SLURM_TMPDIR/dataset

@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel
 from torch.distributed.elastic.multiprocessing.errors import record
 
 import numpy as np
@@ -96,7 +97,7 @@ def train(args):
         weights = torch.load(model.state_dict(), PATH, map_location=map_location)
         model.load_state_dict(weights)
 
-    net = dist.DistributedDataParallel(model, device=[])
+    net = DistributedDataParallel(model, device=[])
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(

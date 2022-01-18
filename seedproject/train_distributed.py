@@ -54,7 +54,7 @@ class Net(nn.Module):
         return x
 
 
-# dist.record
+@dist.record
 def train(args):
     trainset = torchvision.datasets.CIFAR10(
         root=option("dataset.dest", "/tmp/datasets/cifar10"),

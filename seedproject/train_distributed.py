@@ -90,7 +90,7 @@ def train(args):
     net = dist.DistributedDataParallel(model, device=[])
 
     criterion = nn.CrossEntropyLoss()
-        optimizer = optim.SGD(
+    optimizer = optim.SGD(
         net.parameters(),
         lr=args.lr,
         momentum=args.momentum,

@@ -1,17 +1,15 @@
 import os
 
+import numpy as np
 import torch
-import torchvision
-import torchvision.transforms as transforms
+import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel
+import torchvision
+import torchvision.transforms as transforms
 from torch.distributed.elastic.multiprocessing.errors import record
-
-import numpy as np
-
+from torch.nn.parallel import DistributedDataParallel
 
 rank = int(os.environ.get("LOCAL_RANK", 0))
 group = int(os.environ.get("GROUP_RANK", 0))

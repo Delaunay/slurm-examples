@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -vx
+set -evx
 
 #
 # Generate a cookiecutter version of this repository
@@ -66,7 +66,7 @@ cat > mappings.json <<- EOM
         ["seedversion", "version"],
         ["seedgithub", "github_nickname"],
         ["seedrepo", "github_repo"],
-        ["SEEDPROJECT", "PROJECT_NAME"],
+        ["SEEDPROJECT", "PROJECT_NAME"]
     ]
 EOM
 
@@ -94,7 +94,9 @@ cd $dest
 git checkout -b auto
 git add --all
 git commit -m "$MESSAGE"
-# git push origin auto
+git push origin auto
+# git checkout master
+# git branch -D auto
 
 # Remove the folder
 cd $PREV

@@ -9,7 +9,30 @@ log = logging.getLogger()
 
 
 class Checkpoint:
-    """Basic checkpointer that saves all the object it is given periodically"""
+    """Basic checkpointer that saves all the object it is given periodically
+    Checkpointer works for any python objects and for pytorch objects.
+    It also handle saving & loading objects that were saved from different cuda devices
+
+    Examples
+    --------
+
+    >>> class Name:
+    ...     a = 'FistName'
+
+    >>> name = Name()
+
+    >>> chk = Checkpoint('/shared/loc/', 'my-experiment',
+    ...    name=name,
+    ... )
+
+    >>> chk.save()
+    >>> name.a = 'SecondName'
+
+    >>> chk.load()
+    >>> name.a
+    'FirstName'
+
+    """
 
     def __init__(self, path, name, every=2, **kwargs):
         self.data = kwargs
@@ -25,9 +48,9 @@ class Checkpoint:
         if epoch % self.every > 0:
             return
 
-        self.save_checkpoint()
+        self.save()
 
-    def load_checkpoint(self):
+    def load(self):
         """Load a save state to resume training"""
         map_location = None
 
@@ -35,7 +58,7 @@ class Checkpoint:
 
         if not os.path.exists(path):
             log.info("No checkpoint found")
-            self.save_checkpoint()
+            self.save()
             dist.barrier()
             return
 
@@ -69,7 +92,7 @@ class Checkpoint:
         # wait for everybody to load the checkpoint
         dist.barrier()
 
-    def save_checkpoint(self):
+    def save(self):
         """Save the current state of the trained to make it resumable"""
         log.info("save checkpoint")
 

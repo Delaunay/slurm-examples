@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.distributed as dist
+from torch.distributed.elastic.multiprocessing.errors import record
 
 import numpy as np
 
@@ -54,7 +55,7 @@ class Net(nn.Module):
         return x
 
 
-@dist.record
+@record
 def train(args):
     trainset = torchvision.datasets.CIFAR10(
         root=option("dataset.dest", "/tmp/datasets/cifar10"),

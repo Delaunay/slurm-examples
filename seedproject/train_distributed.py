@@ -57,15 +57,23 @@ class Net(nn.Module):
 
 @record
 def train(args):
-    trainset = torchvision.datasets.CIFAR10(
-        root=option("dataset.dest", "/tmp/datasets/cifar10"),
-        train=True,
-        download=rank == 0,
-        transform=transform,
-    )
+    if rank == 0:
+        torchvision.datasets.CIFAR10(
+            root=option("dataset.dest", "/tmp/datasets/cifar10"),
+            train=True,
+            download=rank == 0,
+            transform=transform,
+        )
 
     # Wait for the main worker to finish downloading the dataset
     dist.barrier()
+
+    trainset = torchvision.datasets.CIFAR10(
+        root=option("dataset.dest", "/tmp/datasets/cifar10"),
+        train=True,
+        download=False,
+        transform=transform,
+    )
 
     trainloader = torch.utils.data.DataLoader(
         trainset,

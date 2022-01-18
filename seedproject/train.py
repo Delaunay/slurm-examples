@@ -108,6 +108,19 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=0.01)
     parser.add_argument("--weight_decay", type=float, default=0.001)
     parser.add_argument("--momentum", type=float, default=0.9)
+    parser.add_argument("--config", type=str, default=None, help="")
     args = parser.parse_args()
+
+    if args.config is not None:
+        import json
+
+        with open(args.config, "r") as fp:
+            config = json.load(fp)
+
+        args = vars(args)
+        args.update(config)
+        args.pop("config")
+        args = argparse.Namespace(**args)
+        print(args)
 
     train(args)

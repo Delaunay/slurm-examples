@@ -97,7 +97,7 @@ def train(args):
         weights = torch.load(model.state_dict(), PATH, map_location=map_location)
         model.load_state_dict(weights)
 
-    net = DistributedDataParallel(model, devices=[])
+    net = DistributedDataParallel(model, device_ids=[rank])
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(

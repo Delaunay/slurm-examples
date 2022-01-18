@@ -8,7 +8,6 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torch.distributed as dist
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 

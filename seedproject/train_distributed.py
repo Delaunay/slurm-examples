@@ -1,6 +1,5 @@
 import os
 
-import numpy as np
 import torch
 import torch.distributed as dist
 import torch.nn as nn
@@ -35,6 +34,8 @@ def option(path, default=None, vtype=str):
 
 
 class Net(nn.Module):
+    """My Module"""
+
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Conv2d(3, 6, 5)
@@ -45,6 +46,7 @@ class Net(nn.Module):
         self.fc3 = nn.Linear(84, 10)
 
     def forward(self, x):
+        """Forward pass"""
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
         x = torch.flatten(x, 1)  # flatten all dimensions except batch
@@ -56,6 +58,7 @@ class Net(nn.Module):
 
 @record
 def train(args):
+    """Train function"""
     if rank == 0:
         torchvision.datasets.CIFAR10(
             root=option("dataset.dest", "/tmp/datasets/cifar10"),
@@ -149,7 +152,8 @@ def train(args):
         torch.save(model.state_dict(), PATH)
 
 
-if __name__ == "__main__":
+def main():
+    """Main function"""
     # Usage:
     #
     #   # Works with a single GPU
@@ -177,8 +181,8 @@ if __name__ == "__main__":
     if args.config is not None:
         import json
 
-        with open(args.config, "r") as fp:
-            config = json.load(fp)
+        with open(args.config, "r") as file:
+            config = json.load(file)
 
         args = vars(args)
         args.update(config)
@@ -191,3 +195,7 @@ if __name__ == "__main__":
     train(args)
 
     dist.destroy_process_group()
+
+
+if __name__ == "__main__":
+    main()

@@ -28,12 +28,8 @@ Features
 
   * Single GPU
   * Multi GPU
-  * Multi Node
   * Hyperparameter Optimization
 
-* Checkpoints
-* Dataset Local Copy
-* Dataset splits (train, valid, test)
 * Hyper parameter search with Orion
 
 
@@ -44,7 +40,15 @@ Use this as a cookiecutter
 
 .. code-block:: bash
 
-   cookiecutter https://github.com/Delaunay/ml-seed
+   cookiecutter https://github.com/mila-iqia/ml-seed
+
+
+Install
+~~~~~~~
+
+.. code-block:: bash
+
+   pip install git+https://github.com/seedgithub/seedrepo
 
 
 Layout
@@ -126,5 +130,5 @@ Contributing
 
 .. code-block:: bash
 
-   pip install git+https://github.com/seedgithub/seedrepo
+   git clone https://github.com/seedgithub/seedrepo
 

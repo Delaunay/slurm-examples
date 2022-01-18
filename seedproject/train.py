@@ -1,6 +1,5 @@
 import os
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -28,6 +27,8 @@ def option(path, default=None, vtype=str):
 
 
 class Net(nn.Module):
+    """My Module"""
+
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Conv2d(3, 6, 5)
@@ -38,6 +39,7 @@ class Net(nn.Module):
         self.fc3 = nn.Linear(84, 10)
 
     def forward(self, x):
+        """Forward pass"""
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
         x = torch.flatten(x, 1)  # flatten all dimensions except batch
@@ -48,6 +50,7 @@ class Net(nn.Module):
 
 
 def train(args):
+    """Train function"""
     trainset = torchvision.datasets.CIFAR10(
         root=option("dataset.dest", "/tmp/datasets/cifar10"),
         train=True,
@@ -62,7 +65,7 @@ def train(args):
         num_workers=2,
     )
 
-    device = torch.device(f"cuda")
+    device = torch.device("cuda")
     net = Net().to(device)
 
     criterion = nn.CrossEntropyLoss()
@@ -72,6 +75,8 @@ def train(args):
         momentum=args.momentum,
         weight_decay=args.weight_decay,
     )
+
+    losses = []
 
     for epoch in range(args.epochs):  # loop over the dataset multiple times
 
@@ -95,10 +100,23 @@ def train(args):
                 print(f"[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2000:.3f}")
                 running_loss = 0.0
 
+            losses.append(loss.detach())
+
+        loss = sum([l.item() for l in losses]) / len(losses)
+
     print("Finished Training")
 
+    try:
+        from orion.client import report_objective
 
-if __name__ == "__main__":
+        report_objective(loss, name="loss")
+    except ImportError:
+        print("Orion is not installed")
+
+
+def main():
+    """Main function"""
+
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -112,8 +130,8 @@ if __name__ == "__main__":
     if args.config is not None:
         import json
 
-        with open(args.config, "r") as fp:
-            config = json.load(fp)
+        with open(args.config, "r") as file:
+            config = json.load(file)
 
         args = vars(args)
         args.update(config)
@@ -122,3 +140,7 @@ if __name__ == "__main__":
         print(args)
 
     train(args)
+
+
+if __name__ == "__main__":
+    main()

@@ -78,7 +78,7 @@ def train(args):
 
     trainloader = torch.utils.data.DataLoader(
         trainset,
-        batch_size=2048,
+        batch_size=2048 * torch.cuda.device_count(),
         shuffle=True,
         num_workers=2,
     )
@@ -109,6 +109,8 @@ def train(args):
         weight_decay=args.weight_decay,
     )
 
+    losses = []
+
     for epoch in range(args.epochs):  # loop over the dataset multiple times
 
         running_loss = 0.0
@@ -131,7 +133,18 @@ def train(args):
                 print(f"[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2000:.3f}")
                 running_loss = 0.0
 
+            losses.append(loss.detach())
+
+        loss = sum([l.item() for l in losses]) / len(losses)
+
     print("Finished Training")
+
+    try:
+        from orion.client import report_objective
+
+        report_objective(loss, name="loss")
+    except ImportError:
+        print("Orion is not installed")
 
     # Only one worker should save the network
     if grank <= 0:

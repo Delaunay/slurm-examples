@@ -21,7 +21,8 @@ update-doc: build-doc serve-doc
 
 jobname = output-magic.txt
 resouces = --cpus-per-gpu=2 --mem-per-gpu=16G
-trainscript = seedproject/train_normal.py -vvv --cuda --batch-size 2048
+trainscript_single = seedproject/train.py -vvv --cuda --batch-size 2048
+trainscript_dist = seedproject/train_distributed.py -vvv --cuda --batch-size 2048
 seq = $(shell ls | wc -l)
 
 conda-setup:
@@ -41,23 +42,23 @@ hpo:
 	# 1 GPU | 4 CPU | 16 Go RAM
 	rm -rf $(jobname)
 	touch $(jobname)
-	SEQ=$(seq) sbatch -o $(jobname) --array=0-100 --gres=gpu:1 $(resouces) scripts/hpo.sh $(trainscript)
+	SEQ=$(seq) sbatch -o $(jobname) --array=0-100 --gres=gpu:1 $(resouces) scripts/hpo.sh $(trainscript_single)
 	tail -f $(jobname)
 
 single-gpu:
 	rm -rf $(jobname)
 	touch $(jobname)
-	sbatch -o $(jobname) --time=10:00 --gres=gpu:1 $(resouces) scripts/single-gpu.sh $(trainscript)
+	sbatch -o $(jobname) --time=10:00 --gres=gpu:1 $(resouces) scripts/single-gpu.sh $(trainscript_single)
 	tail -f $(jobname)
 
 multi-gpu:
 	rm -rf $(jobname)
 	touch $(jobname)
-	sbatch -o $(jobname) --time=10:00 --gres=gpu:2 $(resouces) scripts/multi-gpu.sh $(trainscript)
+	sbatch -o $(jobname) --time=10:00 --gres=gpu:2 $(resouces) scripts/multi-gpu.sh $(trainscript_dist)
 	tail -f $(jobname)
 
 multi-node:
 	rm -rf $(jobname)
 	touch $(jobname)
-	sbatch -o $(jobname) --time=10:00 --nodes 3 --gres=gpu:4 $(resouces) scripts/multi-nodes.sh $(trainscript)
+	sbatch -o $(jobname) --time=10:00 --nodes 3 --gres=gpu:4 $(resouces) scripts/multi-nodes.sh $(trainscript_dist)
 	tail -f $(jobname)

@@ -94,8 +94,10 @@ def train(args):
     if grank > 0:
         map_location = {"cuda:%d" % 0: "cuda:%d" % rank}
 
-        weights = torch.load(model.state_dict(), PATH, map_location=map_location)
+        weights = torch.load(PATH, map_location=map_location)
         model.load_state_dict(weights)
+
+    dist.barrier()
 
     net = DistributedDataParallel(model, device_ids=[rank])
 
